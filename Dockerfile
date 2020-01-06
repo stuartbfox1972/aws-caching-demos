@@ -5,7 +5,7 @@ WORKDIR /src/
 ADD demo /src/
 RUN pip install --no-compile -r /src/requirements.txt && \
   chmod +x /src/boot.sh && \
-  apk add mariadb-client git vim && \
+  apk add --no-cache mariadb-client git vim && \
   adduser -D flask && \
   chown -R flask:flask /src/*
 

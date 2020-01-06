@@ -1,0 +1,24 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "CODEBUILD_INITIATOR:${CODEBUILD_INITIATOR}"
+      - echo "CODEBUILD_BUILD_ID:${CODEBUILD_BUILD_ID}"
+      - echo "CODEBUILD_SOURCE_REPO_URL:${CODEBUILD_SOURCE_REPO_URL}"
+      - echo "CODEBUILD_SOURCE_VERSION:${CODEBUILD_SOURCE_VERSION}"
+      - echo "CODEBUILD_RESOLVED_SOURCE_VERSION:${CODEBUILD_RESOLVED_SOURCE_VERSION}"
+      - echo Logging in to Amazon ECR ... 
+      - $(aws ecr get-login --region $AWS_DEFAULT_REGION  --no-include-email)
+  build:
+    commands:
+      - echo Building the Docker image ... 
+      - docker build -t aws-cache:latest .
+  post_build:
+    commands:
+      - echo Pushing the Docker image ... 
+      - docker push
+      - echo printenv 
+      - printenv 
+      - echo "CODEBUILD_BUILD_SUCCEEDING:${CODEBUILD_BUILD_SUCCEEDING}"
+
