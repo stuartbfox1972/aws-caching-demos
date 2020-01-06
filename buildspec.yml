@@ -24,4 +24,3 @@ phases:
       - echo printenv 
       - printenv 
       - echo "CODEBUILD_BUILD_SUCCEEDING:${CODEBUILD_BUILD_SUCCEEDING}"
-
