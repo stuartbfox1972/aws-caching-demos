@@ -15,7 +15,8 @@ phases:
   build:
     commands:
       - echo Building the Docker image ... 
-      - docker build -t 675959897322.dkr.ecr.us-east-1.amazonaws.com/aws-caching:latest .
+      - docker build -t aws-caching .
+      - docker tag aws-caching:latest 675959897322.dkr.ecr.us-east-1.amazonaws.com/aws-caching:latest
   post_build:
     commands:
       - echo Pushing the Docker image ... 
