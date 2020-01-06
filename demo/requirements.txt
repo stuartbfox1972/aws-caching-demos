@@ -1,5 +1,6 @@
 boto3
 datetime
-Flask
+flask
+bootstrap-flask
 mysql-connector
 redis

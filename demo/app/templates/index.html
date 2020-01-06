@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    {% block head %}
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    {% block styles %}
+    <!-- Bootstrap CSS -->
+    {{ bootstrap.load_css() }}
+    <link rel="stylesheet" href="static/aws-caching.css" type="text/css">
+    {% endblock %}
+
+    <title>AWS Caching Demos</title>
+    {% endblock %}
+  </head>
+  <body>
+    <!-- Your page content -->
+    {% block content %}
+<section id="tabs">
+  <div class="container">
+    <h6 class="section-title h1">AWS Caching Demos</h6>
+    Welcome
+    <div class="row">
+      <div class="col-xs-12 ">
+        <nav>
+          <div class="nav nav-tabs nav-fill" id="nav-tab" role="tablist">
+            <a class="nav-item nav-link active" id="nav-redis-tab" data-toggle="tab" href="#nav-redis" role="tab" aria-controls="nav-redis" aria-selected="true">Redis</a>
+            <a class="nav-item nav-link" id="nav-dax-tab" data-toggle="tab" href="#nav-dax" role="tab" aria-controls="nav-dax" aria-selected="false">DAX</a>
+          </div>
+        </nav>
+        <div class="tab-content py-3 px-3 px-sm-0" id="nav-tabContent">
+          <div class="tab-pane fade show active" id="nav-redis" role="tabpanel" aria-labelledby="nav-redis-tab">
+REDIS
+          </div>
+          <div class="tab-pane fade" id="nav-dax" role="tabpanel" aria-labelledby="nav-dax-tab">
+DAX
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+    {% endblock %}
+
+    {% block scripts %}
+    <!-- Optional JavaScript -->
+    {{ bootstrap.load_js() }}
+    {% endblock %}
+  </body>
+</html>
