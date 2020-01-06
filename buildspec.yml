@@ -15,11 +15,11 @@ phases:
   build:
     commands:
       - echo Building the Docker image ... 
-      - docker build -t aws-cache:latest .
+      - docker build -t 675959897322.dkr.ecr.us-east-1.amazonaws.com/aws-caching:latest .
   post_build:
     commands:
       - echo Pushing the Docker image ... 
-      - docker push
+      - docker push 675959897322.dkr.ecr.us-east-1.amazonaws.com/aws-caching:latest
       - echo printenv 
       - printenv 
       - echo "CODEBUILD_BUILD_SUCCEEDING:${CODEBUILD_BUILD_SUCCEEDING}"
