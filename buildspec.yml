@@ -5,22 +5,25 @@ phases:
       docker: 18
   pre_build:
     commands:
-      - echo "CODEBUILD_INITIATOR:${CODEBUILD_INITIATOR}"
-      - echo "CODEBUILD_BUILD_ID:${CODEBUILD_BUILD_ID}"
-      - echo "CODEBUILD_SOURCE_REPO_URL:${CODEBUILD_SOURCE_REPO_URL}"
-      - echo "CODEBUILD_SOURCE_VERSION:${CODEBUILD_SOURCE_VERSION}"
-      - echo "CODEBUILD_RESOLVED_SOURCE_VERSION:${CODEBUILD_RESOLVED_SOURCE_VERSION}"
-      - echo Logging in to Amazon ECR ... 
-      - $(aws ecr get-login --region $AWS_DEFAULT_REGION  --no-include-email)
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
+      - REPOSITORY_URI=675959897322.dkr.ecr.us-east-1.amazonaws.com/aws-caching
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
   build:
     commands:
-      - echo Building the Docker image ... 
-      - docker build -t aws-caching .
-      - docker tag aws-caching:latest 675959897322.dkr.ecr.us-east-1.amazonaws.com/aws-caching:latest
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t $REPOSITORY_URI:latest .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
   post_build:
     commands:
-      - echo Pushing the Docker image ... 
-      - docker push 675959897322.dkr.ecr.us-east-1.amazonaws.com/aws-caching:latest
-      - echo printenv 
-      - printenv 
-      - echo "CODEBUILD_BUILD_SUCCEEDING:${CODEBUILD_BUILD_SUCCEEDING}"
+      - echo Build completed on `date`
+      - echo Pushing the Docker images...
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo Writing image definitions file...
+      - printf '[{"name":"aws-caching","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+  artifacts:
+    files: imagedefinitions.json
