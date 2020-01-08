@@ -16,8 +16,8 @@ Metadata:
         Parameters:
           - Vpc
           - KeyName
-          - Subnet1
-          - Subnet2
+          - PrivSubnet1
+          - PrivSubnet2
       - Label:
           default: "RDS Configuration"
         Parameters:
@@ -33,6 +33,11 @@ Metadata:
           default: "DynamoDB Configuration"
         Parameters:
           - DynamoDBTableName
+      - Label:
+          default: "ALB Configuration"
+        Parameters:
+          - PubSubnet1
+          - PubSubnet2
 
 Parameters:
   Vpc:
@@ -61,10 +66,10 @@ Parameters:
     AllowedPattern: "[a-zA-Z0-9]*"
     MinLength: 8
     MaxLength: 41
-  Subnet1:
+  PrivSubnet1:
     Type: AWS::EC2::Subnet::Id
     Description: "Private Subnet Id where nodes instance will be placed"
-  Subnet2:
+  PrivSubnet2:
     Type: AWS::EC2::Subnet::Id
     Description: "Private Subnet Id where nodes instance will be placed"
   CacheInstanceType:
@@ -85,6 +90,12 @@ Parameters:
     Default: "demotable"
     Description: "DynamoDB Table Name"
     AllowedPattern: "[a-zA-Z0-9]*"
+  PubSubnet1:
+    Type: AWS::EC2::Subnet::Id
+    Description: "Public Subnet Id where the ALB will be placed"
+  PubSubnet2:
+    Type: AWS::EC2::Subnet::Id
+    Description: "Public Subnet Id where the ALB will be placed"
 
 Mappings:
   RegionMap:
@@ -141,8 +152,8 @@ Resources:
     Properties:
       DBSubnetGroupDescription: RDS DB Subnet Group
       SubnetIds:
-      - Ref: Subnet1
-      - Ref: Subnet2
+      - Ref: PrivSubnet1
+      - Ref: PrivSubnet2
 
   DatabaseInstance:
     Type: AWS::RDS::DBInstance
@@ -180,8 +191,8 @@ Resources:
     Properties:
       Description: ElastiCache Subnet Group
       SubnetIds:
-      - Ref: Subnet1
-      - Ref: Subnet2
+      - Ref: PrivSubnet1
+      - Ref: PrivSubnet2
 
   CacheCluster:
     Type: AWS::ElastiCache::CacheCluster
@@ -213,8 +224,117 @@ Resources:
       ProvisionedThroughput: 
         ReadCapacityUnits: 50
         WriteCapacityUnits: 50
+
+  DAXSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: DAX SG
+      VpcId:
+        Ref: Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8111
+          ToPort: 8111
+          SourceSecurityGroupId: !GetAtt EBSecurityGroup.GroupId
+
+  DAXSubnetGroup:
+    Type: AWS::DAX::SubnetGroup
+    Properties:
+      SubnetGroupName: "my-dax-subnet-group" 
+      Description: "Description of my DAX subnet group" 
+      SubnetIds:
+        - !Ref PrivSubnet1
+        - !Ref PrivSubnet2
+
+  DAXParamGroup:
+    Type: AWS::DAX::ParameterGroup
+    Properties:
+      ParameterGroupName: "MyDAXParameterGroup" 
+      Description: "Description for my DAX parameter group" 
+      ParameterNameValues:
+         "query-ttl-millis" : "75000"
+         "record-ttl-millis" : "88000"
+
+  DAXRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+            - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+              - dax.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+      RoleName: aws-caching-demo-dax-role
+
+  DAXCluster:
+    Type: AWS::DAX::Cluster
+    Properties:
+      ClusterName: aws-caching-dax
+      Description: Cluster for aws-caching-demo
+      IAMRoleARN: !GetAtt DAXRole.Arn
+      NodeType: dax.t2.medium
+      ReplicationFactor: 1
+      SecurityGroupIds:
+        - !GetAtt DAXSecurityGroup.GroupId
+      SubnetGroupName: !Ref DAXSubnetGroup
       
   MyRepository:
     Type: AWS::ECR::Repository
     Properties: 
       RepositoryName: "aws-caching"
+
+  
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB SG
+      VpcId:
+        Ref: Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+ 
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: aws-caching-demo
+      Subnets: 
+        - !Ref PrivSubnet1
+        - !Ref PrivSubnet2
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+
+  LoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref DefaultTargetGroup
+
+  DefaultTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: aws-caching-default-target-group
+      VpcId: !Ref Vpc
+      Port: 80
+      Protocol: HTTP
+
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: aws-caching-demo
+
+Outputs:
+  LoadBalancerUrl:
+    Description: The URL of the ALB
+    Value: !Sub 'http://${LoadBalancer.DNSName}'
