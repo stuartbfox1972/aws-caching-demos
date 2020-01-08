@@ -12,8 +12,8 @@ if ! ${MSTR} -e 'select count(1) from titles' &>/dev/null ; then
   cd test_db
   ${MSTR} < employees.sql
   rm -rf /tmp/test_db
-else        
-  cd ${HOME}
-  # Start flask listening on all interfaces
-  exec flask run --host=0.0.0.0 
 fi
+
+cd ${HOME}
+# Start flask listening on all interfaces
+exec flask run --host=0.0.0.0 

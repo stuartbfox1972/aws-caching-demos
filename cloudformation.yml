@@ -1,0 +1,216 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "**WARNING** You will be billed for the AWS resources used if you create a stack from this template"
+
+Metadata:
+  About:
+    Description: "AWS Caching Demos"
+  Author:
+    Description: "Stuart Fox"
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "General Configuration"
+        Parameters:
+          - Vpc
+          - KeyName
+          - Subnet1
+          - Subnet2
+      - Label:
+          default: "RDS Configuration"
+        Parameters:
+          - DBUser
+          - DBPass
+          - DBInstanceType
+      - Label:
+          default: "ElastiCache Configuration"
+        Parameters:
+          - CacheClusterName
+          - CacheInstanceType
+      - Label:
+          default: "DynamoDB Configuration"
+        Parameters:
+          - DynamoDBTableName
+
+Parameters:
+  Vpc:
+    Type: AWS::EC2::VPC::Id
+    Description: "VPC where the instances will be placed"
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: "Key pair name used grant access to the EC2 instance"
+  DBInstanceType:
+    Type: String
+    Default: db.t2.micro
+    Description: "RDS MySQL Instance types, i.e. db.t2.micro, db.t2.small, db.m3.medium, db.m4.xlarge, etc"
+    AllowedValues:
+      - db.t2.micro
+      - db.t2.small
+      - db.t2.medium
+  DBUser:
+    Type: String
+    Default: "demodb"
+    Description: "Database Username"
+    AllowedPattern: "[a-zA-Z0-9]*"
+  DBPass:
+    Type: String
+    Description: "Database Password, between 8-41 characters"
+    NoEcho: true
+    AllowedPattern: "[a-zA-Z0-9]*"
+    MinLength: 8
+    MaxLength: 41
+  Subnet1:
+    Type: AWS::EC2::Subnet::Id
+    Description: "Private Subnet Id where nodes instance will be placed"
+  Subnet2:
+    Type: AWS::EC2::Subnet::Id
+    Description: "Private Subnet Id where nodes instance will be placed"
+  CacheInstanceType:
+    Type: String
+    Default: cache.t2.small
+    Description: "ElastiCache Instance types, i.e. cache.t2.small, cache.m3.large, etc"
+    AllowedValues:
+      - cache.t2.micro
+      - cache.t2.small
+      - cache.t2.medium
+  CacheClusterName:
+    Type: String
+    Default: "democache"
+    Description: "Cache Cluster Name"
+    AllowedPattern: "[a-zA-Z0-9]*"
+  DynamoDBTableName:
+    Type: String
+    Default: "demotable"
+    Description: "DynamoDB Table Name"
+    AllowedPattern: "[a-zA-Z0-9]*"
+
+Mappings:
+  RegionMap:
+    us-east-1:
+      AMI: ami-00068cd7555f543d5
+      DeviceName: /dev/xvda
+
+Resources:
+  EnhancedMonitoringRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service: monitoring.rds.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole
+      Path: "/"
+
+  EBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "EB SG"
+      VpcId:
+        Ref: Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Database SG
+      VpcId:
+        Ref: Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !GetAtt EBSecurityGroup.GroupId
+
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: RDS DB Subnet Group
+      SubnetIds:
+      - Ref: Subnet1
+      - Ref: Subnet2
+
+  DatabaseInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBName: employees
+      AllocatedStorage: 50
+      DBInstanceClass: !Ref DBInstanceType
+      StorageType: gp2
+      Engine: mysql
+      EngineVersion: 8.0.16
+      MasterUsername: !Ref DBUser
+      MasterUserPassword: !Ref DBPass
+      MonitoringRoleArn: !GetAtt ['EnhancedMonitoringRole', 'Arn']
+      MonitoringInterval: 60
+      VPCSecurityGroups:
+         - !GetAtt DatabaseSecurityGroup.GroupId
+      DBSubnetGroupName:
+        Ref: DatabaseSubnetGroup
+      MultiAZ: false
+
+  CacheSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ElastiCache SG
+      VpcId:
+        Ref: Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          SourceSecurityGroupId: !GetAtt EBSecurityGroup.GroupId
+
+  CacheSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: ElastiCache Subnet Group
+      SubnetIds:
+      - Ref: Subnet1
+      - Ref: Subnet2
+
+  CacheCluster:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      AutoMinorVersionUpgrade: true
+      CacheNodeType: !Ref CacheInstanceType
+      ClusterName: !Ref CacheClusterName
+      Engine: redis
+      EngineVersion: 5.0.6
+      NumCacheNodes: 1
+      Port: 6379
+      VpcSecurityGroupIds:
+        - !Ref CacheSecurityGroup
+      CacheSubnetGroupName:
+        Ref: CacheSubnetGroup
+
+  DynamodbTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref DynamoDBTableName
+      AttributeDefinitions:
+        - 
+          AttributeName: "serialNumber"
+          AttributeType: "N"
+      KeySchema:
+        - 
+          AttributeName: serialNumber
+          KeyType: "HASH"
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 50
+        WriteCapacityUnits: 50
+      
