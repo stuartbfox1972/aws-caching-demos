@@ -225,6 +225,19 @@ Resources:
         ReadCapacityUnits: 50
         WriteCapacityUnits: 50
 
+  DynamodbTableAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: aws-caching-demotable-access
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action: dynamodb:*
+          Resource: !GetAtt DynamodbTable.Arn
+      Roles:
+        - !Ref DAXRole
+
   DAXSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -258,6 +271,7 @@ Resources:
   DAXRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: aws-caching-demo-dax-role
       AssumeRolePolicyDocument:
         Statement:
           - Action:
@@ -266,10 +280,6 @@ Resources:
             Principal:
               Service:
               - dax.amazonaws.com
-        Version: '2012-10-17'
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
-      RoleName: aws-caching-demo-dax-role
 
   DAXCluster:
     Type: AWS::DAX::Cluster
@@ -285,6 +295,7 @@ Resources:
       
   MyRepository:
     Type: AWS::ECR::Repository
+    DeletionPolicy: Delete
     Properties: 
       RepositoryName: "aws-caching"
 
@@ -329,10 +340,54 @@ Resources:
       Port: 80
       Protocol: HTTP
 
+  ECSServiceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole'
+      AssumeRolePolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'ecs.amazonaws.com'
+          Action: 'sts:AssumeRole'
+
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: aws-caching-demo
+
+  ECSTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Family: !Ref 'AWS::StackName'
+      NetworkMode: bridge
+      ContainerDefinitions:
+      - Name: main
+        Image: !Sub "${MyRepository.Arn}/awc-caching:latest"
+        Memory: 128
+        PortMappings:
+        - ContainerPort: 5000
+          Protocol: tcp
+        Essential: true
+
+  ECSService:
+    Type: 'AWS::ECS::Service'
+    DependsOn: LoadBalancerListener
+    Properties:
+      Cluster: aws-caching-demo
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      DesiredCount: 1
+      HealthCheckGracePeriodSeconds: 120
+      LoadBalancers:
+      - ContainerName: main
+        ContainerPort: 5000
+        TargetGroupArn: !Ref DefaultTargetGroup
+      Role: !GetAtt 'ECSServiceRole.Arn'
+      TaskDefinition: !Ref ECSTaskDefinition
 
 Outputs:
   LoadBalancerUrl:
