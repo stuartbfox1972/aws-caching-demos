@@ -292,13 +292,6 @@ Resources:
       SecurityGroupIds:
         - !GetAtt DAXSecurityGroup.GroupId
       SubnetGroupName: !Ref DAXSubnetGroup
-      
-  MyRepository:
-    Type: AWS::ECR::Repository
-    DeletionPolicy: Delete
-    Properties: 
-      RepositoryName: "aws-caching"
-
   
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -340,6 +333,12 @@ Resources:
       Port: 80
       Protocol: HTTP
 
+  ECRepository:
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
+    Properties: 
+      RepositoryName: "aws-caching"
+
   ECSServiceRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -359,13 +358,14 @@ Resources:
       ClusterName: aws-caching-demo
 
   ECSTaskDefinition:
+    DependsOn: ECRepository
     Type: 'AWS::ECS::TaskDefinition'
     Properties:
       Family: !Ref 'AWS::StackName'
       NetworkMode: bridge
       ContainerDefinitions:
       - Name: main
-        Image: !Sub "${MyRepository.Arn}/awc-caching:latest"
+        Image: !Sub "${ECRepository.Arn}/aws-caching:latest"
         Memory: 128
         PortMappings:
         - ContainerPort: 5000
