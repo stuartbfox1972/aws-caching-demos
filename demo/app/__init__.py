@@ -14,6 +14,7 @@ try:
             'serialNumber': 9999
         }
     )
+    print('DynamoDB Table Already Populated')
 except:
     print('Populating DynamoDB Table')
     batchsize=1000

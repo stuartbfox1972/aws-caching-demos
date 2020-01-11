@@ -97,12 +97,6 @@ Parameters:
     Type: AWS::EC2::Subnet::Id
     Description: "Public Subnet Id where the ALB will be placed"
 
-Mappings:
-  RegionMap:
-    us-east-1:
-      AMI: ami-00068cd7555f543d5
-      DeviceName: /dev/xvda
-
 Resources:
   EnhancedMonitoringRole:
     Type: AWS::IAM::Role
@@ -145,7 +139,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
-          SourceSecurityGroupId: !GetAtt EBSecurityGroup.GroupId
+          SourceSecurityGroupId: !GetAtt ECSSecurityGroup.GroupId
 
   DatabaseSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
@@ -184,7 +178,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 6379
           ToPort: 6379
-          SourceSecurityGroupId: !GetAtt EBSecurityGroup.GroupId
+          SourceSecurityGroupId: !GetAtt ECSSecurityGroup.GroupId
 
   CacheSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
@@ -237,6 +231,7 @@ Resources:
           Resource: !GetAtt DynamodbTable.Arn
       Roles:
         - !Ref DAXRole
+        - !Ref ECSTaskRole
 
   DAXSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -248,7 +243,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 8111
           ToPort: 8111
-          SourceSecurityGroupId: !GetAtt EBSecurityGroup.GroupId
+          SourceSecurityGroupId: !GetAtt ECSSecurityGroup.GroupId
 
   DAXSubnetGroup:
     Type: AWS::DAX::SubnetGroup
@@ -309,29 +304,64 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Name: aws-caching-demo
+      Scheme: internet-facing
       Subnets: 
-        - !Ref PrivSubnet1
-        - !Ref PrivSubnet2
+        - !Ref PubSubnet1
+        - !Ref PubSubnet2
       SecurityGroups:
         - !Ref ALBSecurityGroup
-
+    
   LoadBalancerListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
-      LoadBalancerArn: !Ref LoadBalancer
+      LoadBalancerArn: !Ref 'LoadBalancer'
       Port: 80
       Protocol: HTTP
       DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref DefaultTargetGroup
+        - TargetGroupArn: !Ref 'DefaultTargetGroup'
+          Type: 'forward'
 
   DefaultTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: aws-caching-default-target-group
+      VpcId: !Ref 'Vpc'
+      Port: 80
+      Protocol: HTTP
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
       VpcId: !Ref Vpc
       Port: 80
       Protocol: HTTP
+      Matcher:
+        HttpCode: 200-299
+      HealthCheckIntervalSeconds: 60
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 45
+      HealthyThresholdCount: 2
+      TargetType: ip
+
+  ListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref LoadBalancerListener
+      Priority: 1
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /
+      Actions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+
+  CloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Ref AWS::StackName
+      RetentionInDays: 365
 
   ECRepository:
     Type: AWS::ECR::Repository
@@ -339,18 +369,27 @@ Resources:
     Properties: 
       RepositoryName: "aws-caching"
 
-  ECSServiceRole:
-    Type: 'AWS::IAM::Role'
+  ECSTaskRole:
+    Type: AWS::IAM::Role
     Properties:
-      ManagedPolicyArns:
-      - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole'
+      RoleName: aws-caching-demo-ecs-task-role
       AssumeRolePolicyDocument:
-        Version: '2008-10-17'
         Statement:
-        - Effect: Allow
-          Principal:
-            Service: 'ecs.amazonaws.com'
-          Action: 'sts:AssumeRole'
+          - Action:
+            - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+              - ecs-tasks.amazonaws.com
+
+  ECSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Access to the Fargate containers"
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          SourceSecurityGroupId: !Ref 'ALBSecurityGroup'
 
   ECSCluster:
     Type: AWS::ECS::Cluster
@@ -358,35 +397,77 @@ Resources:
       ClusterName: aws-caching-demo
 
   ECSTaskDefinition:
-    DependsOn: ECRepository
+    DependsOn:
+      - ECRepository
+      - ECSTaskRole
     Type: 'AWS::ECS::TaskDefinition'
     Properties:
+      ExecutionRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
+      TaskRoleArn: { "Fn::GetAtt": ["ECSTaskRole", "Arn"] }
+      RequiresCompatibilities:
+        - "FARGATE"
       Family: !Ref 'AWS::StackName'
-      NetworkMode: bridge
+      NetworkMode: "awsvpc"
+      Cpu: 256
+      Memory: 512
       ContainerDefinitions:
-      - Name: main
-        Image: !Sub "${ECRepository.Arn}/aws-caching:latest"
-        Memory: 128
+      - Name: aws-caching
+        Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/aws-caching:latest"
         PortMappings:
         - ContainerPort: 5000
           Protocol: tcp
+        EntryPoint: 
+          - "/src/boot.sh"
         Essential: true
+        Cpu: 256
+        Memory: 512
+        LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CloudWatchLogsGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: aws-caching-demo
+        Environment:
+          - Name: DB_HOST
+            Value: { "Fn::GetAtt": ["DatabaseInstance","Endpoint.Address"]}
+          - Name: DB_USER
+            Value: !Ref DBUser
+          - Name: DB_PASS
+            Value: !Ref DBPass
+          - Name: DB_DB
+            Value: "employees"
+          - Name: DYNAMODB_TABLE
+            Value: !Ref DynamoDBTableName
+          - Name: CACHE_HOST
+            Value: { "Fn::GetAtt": ["CacheCluster","RedisEndpoint.Address"]}
+          - Name: DAX_HOST
+            Value: { "Fn::GetAtt": ["DAXCluster", "ClusterDiscoveryEndpoint"] }
 
   ECSService:
     Type: 'AWS::ECS::Service'
-    DependsOn: LoadBalancerListener
+    DependsOn:
+      - LoadBalancerListener
     Properties:
       Cluster: aws-caching-demo
+      LaunchType: FARGATE
+      TaskDefinition: 
+        Ref: ECSTaskDefinition
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
       DesiredCount: 1
-      HealthCheckGracePeriodSeconds: 120
+      HealthCheckGracePeriodSeconds: 600
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - !Ref ECSSecurityGroup
+          Subnets:
+            - !Ref PrivSubnet1
+            - !Ref PrivSubnet2
       LoadBalancers:
-      - ContainerName: main
+      - ContainerName: aws-caching
         ContainerPort: 5000
-        TargetGroupArn: !Ref DefaultTargetGroup
-      Role: !GetAtt 'ECSServiceRole.Arn'
+        TargetGroupArn: !Ref TargetGroup
       TaskDefinition: !Ref ECSTaskDefinition
 
 Outputs:
