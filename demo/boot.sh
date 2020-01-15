@@ -15,6 +15,8 @@ else
   echo "MYSQL DATA ALREADY INSERTED"
 fi
 
+python -u check_dynamo.py
+
 cd ${HOME}
 # Start flask listening on all interfaces
 exec flask run --host=0.0.0.0 
