@@ -8,6 +8,7 @@ import string
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ['DYNAMODB_TABLE'])
 
+print('Checking DynamoDB')
 try:
     response = table.get_item(
         Key={

@@ -12,8 +12,9 @@ RUN pip install --no-compile -r /src/requirements.txt && \
 ENV FLASK_APP demo.py
 ENV FLASK_DEBUG 1
 ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED TRUE
 
-#USER flask
+USER flask
 
 EXPOSE 5000
 ENTRYPOINT ["/src/boot.sh"]
