@@ -3,24 +3,26 @@ import os
 import random
 import string
 
-for k, v in os.environ.items():
-    print(f'{k}={v}')
 
-dynamodb = boto3.resource('dynamodb')
+if os.environ['ENDPOINT']:
+    dynamodb = boto3.resource('dynamodb', endpoint_url=os.environ['ENDPOINT'])
+else:
+    dynamodb = boto3.resource('dynamodb')
+
 table = dynamodb.Table(os.environ['DYNAMODB_TABLE'])
 
+
+item = table.get_item(
+  Key={
+    'serialNumber': 99999
+  }
+)
+
 print('Checking DynamoDB')
-try:
-    response = table.get_item(
-        Key={
-            'serialNumber': 10001
-        }
-    )
-    print(response['Item'])
-except:
+if 'Item' not in item:
     print('Populating DynamoDB Table')
     batchsize=1000
-    for i in range(0, 10000, batchsize):
+    for i in range(0, 100000, batchsize):
         print(i)
         with table.batch_writer() as batch:
             for item in range(i, i+batchsize):
@@ -32,3 +34,5 @@ except:
                         'text': res
                     }
                 )
+else:
+    print("DynamoDB Table Already Populated with test data")

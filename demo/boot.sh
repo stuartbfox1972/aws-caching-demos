@@ -15,8 +15,11 @@ else
   echo "MYSQL DATA ALREADY INSERTED"
 fi
 
-python -u check_dynamo.py
-
 cd ${HOME}
+# Check if the dynamo table is populated with 50000 dummy records
+# If not, make it so
+
+python -u check_dynamo.py &
+
 # Start flask listening on all interfaces
 exec flask run --host=0.0.0.0 
