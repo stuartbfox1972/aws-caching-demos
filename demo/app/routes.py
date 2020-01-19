@@ -60,12 +60,13 @@ def elasticache_query():
             start = datetime.now()
             cursor.execute(q)
             data = cursor.fetchall()
-            r.set(hex_dig, pickle.dumps(data))
+            p_data = pickle.dumps(data)
+            r.set(hex_dig, p_data)
             stop = datetime.now()
             diff = (stop-start).total_seconds()
             payload = json.dumps({"Response": "CACHE MISS",
                                 "Duration": str(diff) + " seconds",
-                                "Payload Size": size(sys.getsizeof(data))})
+                                "Payload Size": size(sys.getsizeof(p_data))})
             return Response(payload, mimetype='application/json')
         except mysql.connector.Error as e:
             payload = json.dumps({"Response": "Something went wrong: {}".format(e)})

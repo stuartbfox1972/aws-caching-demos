@@ -33,6 +33,7 @@ Metadata:
           default: "DynamoDB Configuration"
         Parameters:
           - DynamoDBTableName
+          - DAXInstanceType
       - Label:
           default: "ALB Configuration"
         Parameters:
@@ -48,12 +49,14 @@ Parameters:
     Description: "Key pair name used grant access to the EC2 instance"
   DBInstanceType:
     Type: String
-    Default: db.t2.micro
+    Default: db.t2.medium
     Description: "RDS MySQL Instance types, i.e. db.t2.micro, db.t2.small, db.m3.medium, db.m4.xlarge, etc"
     AllowedValues:
       - db.t2.micro
       - db.t2.small
       - db.t2.medium
+      - db.t2.large
+      - db.m5.large
   DBUser:
     Type: String
     Default: "demodb"
@@ -74,12 +77,13 @@ Parameters:
     Description: "Private Subnet Id where nodes instance will be placed"
   CacheInstanceType:
     Type: String
-    Default: cache.t2.small
+    Default: cache.t2.medium
     Description: "ElastiCache Instance types, i.e. cache.t2.small, cache.m3.large, etc"
     AllowedValues:
       - cache.t2.micro
       - cache.t2.small
       - cache.t2.medium
+      - cache.r5.large
   CacheClusterName:
     Type: String
     Default: "democache"
@@ -90,6 +94,14 @@ Parameters:
     Default: "demotable"
     Description: "DynamoDB Table Name"
     AllowedPattern: "[a-zA-Z0-9]*"
+  DAXInstanceType:
+    Type: String
+    Default: dax.t2.medium
+    Description: "RDS MySQL Instance types, i.e. db.t2.micro, db.t2.small, db.m3.medium, db.m4.xlarge, etc"
+    AllowedValues:
+      - dax.t2.small
+      - dax.t2.medium
+      - dax.r5.large
   PubSubnet1:
     Type: AWS::EC2::Subnet::Id
     Description: "Public Subnet Id where the ALB will be placed"
@@ -282,7 +294,7 @@ Resources:
       ClusterName: aws-caching-dax
       Description: Cluster for aws-caching-demo
       IAMRoleARN: !GetAtt DAXRole.Arn
-      NodeType: dax.t2.medium
+      NodeType: !Ref DAXInstanceType
       ReplicationFactor: 1
       SecurityGroupIds:
         - !GetAtt DAXSecurityGroup.GroupId
