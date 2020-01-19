@@ -170,7 +170,7 @@ Resources:
     Type: AWS::ElastiCache::SubnetGroup
     Properties:
       Description: "ElastiCache Subnet Group"
-      CacheSubnetGroupName: !Sub "${AWS::StackName}-SubnetGroup"
+      CacheSubnetGroupName: !Sub "${AWS::StackName}-CacheSubnetGroup"
       SubnetIds:
       - Ref: PrivSubnet1
       - Ref: PrivSubnet2
@@ -237,7 +237,7 @@ Resources:
     Type: AWS::DAX::SubnetGroup
     Properties:
       Description: "DAX subnet group"
-      SubnetGroupName: !Sub "${AWS::StackName}-DaxDubnetgroup"  
+      SubnetGroupName: !Sub "${AWS::StackName}-DaxSubnetgroup"  
       SubnetIds:
         - !Ref PrivSubnet1
         - !Ref PrivSubnet2
@@ -350,14 +350,14 @@ Resources:
   CloudWatchLogsGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Ref AWS::StackName
+      LogGroupName: !Sub "${AWS::StackName}-LogGroup"
       RetentionInDays: 365
 
-  ECRepository:
-    Type: AWS::ECR::Repository
-    DeletionPolicy: Retain
-    Properties: 
-      RepositoryName: "aws-caching"
+  #ECRepository:
+  #  Type: AWS::ECR::Repository
+  #  DeletionPolicy: Retain
+  #  Properties: 
+  #    RepositoryName: "aws-caching"
 
   ECSTaskRole:
     Type: AWS::IAM::Role
@@ -389,7 +389,6 @@ Resources:
 
   ECSTaskDefinition:
     DependsOn:
-      - ECRepository
       - ECSTaskRole
     Type: 'AWS::ECS::TaskDefinition'
     Properties:
@@ -457,7 +456,7 @@ Resources:
             - !Ref PrivSubnet1
             - !Ref PrivSubnet2
       LoadBalancers:
-      - ContainerName: aws-caching
+      - ContainerName: !Sub "${AWS::StackName}-ContainerDef"
         ContainerPort: 5000
         TargetGroupArn: !Ref TargetGroup
 
