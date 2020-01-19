@@ -1,6 +1,6 @@
 .tabs {
     position: relative;
-    min-height: 200px; /* This part sucks */
+    min-height: 200px;
     clear: both;
     margin: 25px 0;
   }
@@ -32,8 +32,8 @@
   .content > * {
     opacity: 0;
     transform: translateX(-100%);
-    /* transition: all 0.6s ease; */
   }
+
   [type="radio"]:checked ~ label {
     background: white;
     border-bottom: 1px solid white;
@@ -46,3 +46,11 @@
     opacity: 1;
     transform: translateX(0);
   }
+}
+
+.textarea {
+  border: none;
+  background-color: transparent;
+  resize: none;
+  outline: none;
+}

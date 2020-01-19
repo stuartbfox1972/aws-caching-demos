@@ -25,7 +25,7 @@ def index():
 def elasticache_flush():
     r = redis_connect()
     r.flushall()
-    return Response("{'Elasticache successfully flushed'}", mimetype='application/json')
+    return Response("{'Response': 'Elasticache successfully flushed'}", mimetype='application/json')
 
 
 @app.route('/api/v1.0/dax')
