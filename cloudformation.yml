@@ -15,7 +15,6 @@ Metadata:
           default: "General Configuration"
         Parameters:
           - Vpc
-          - KeyName
           - PrivSubnet1
           - PrivSubnet2
       - Label:
@@ -27,12 +26,10 @@ Metadata:
       - Label:
           default: "ElastiCache Configuration"
         Parameters:
-          - CacheClusterName
           - CacheInstanceType
       - Label:
-          default: "DynamoDB Configuration"
+          default: "DAX Configuration"
         Parameters:
-          - DynamoDBTableName
           - DAXInstanceType
       - Label:
           default: "ALB Configuration"
@@ -43,10 +40,7 @@ Metadata:
 Parameters:
   Vpc:
     Type: AWS::EC2::VPC::Id
-    Description: "VPC where the instances will be placed"
-  KeyName:
-    Type: AWS::EC2::KeyPair::KeyName
-    Description: "Key pair name used grant access to the EC2 instance"
+    Description: "VPC where the cache and database instances will be placed"
   DBInstanceType:
     Type: String
     Default: db.t2.medium
@@ -84,16 +78,6 @@ Parameters:
       - cache.t2.small
       - cache.t2.medium
       - cache.r5.large
-  CacheClusterName:
-    Type: String
-    Default: "democache"
-    Description: "Cache Cluster Name"
-    AllowedPattern: "[a-zA-Z0-9]*"
-  DynamoDBTableName:
-    Type: String
-    Default: "demotable"
-    Description: "DynamoDB Table Name"
-    AllowedPattern: "[a-zA-Z0-9]*"
   DAXInstanceType:
     Type: String
     Default: dax.t2.medium
@@ -101,7 +85,7 @@ Parameters:
     AllowedValues:
       - dax.t2.small
       - dax.t2.medium
-      - dax.r5.large
+      - dax.r4.large
   PubSubnet1:
     Type: AWS::EC2::Subnet::Id
     Description: "Public Subnet Id where the ALB will be placed"
@@ -113,6 +97,7 @@ Resources:
   EnhancedMonitoringRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !Sub "${AWS::StackName}-RDSMonitoringRole"
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -125,26 +110,11 @@ Resources:
       - arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole
       Path: "/"
 
-  EBSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: "EB SG"
-      VpcId:
-        Ref: Vpc
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-
   DatabaseSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Database SG
+      GroupDescription: "Database Security Group"
+      GroupName: !Sub "${AWS::StackName}-RDSSG"
       VpcId:
         Ref: Vpc
       SecurityGroupIngress:
@@ -157,6 +127,7 @@ Resources:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
       DBSubnetGroupDescription: RDS DB Subnet Group
+      DBSubnetGroupName: !Sub "${AWS::StackName}-RDSubnetgroup"
       SubnetIds:
       - Ref: PrivSubnet1
       - Ref: PrivSubnet2
@@ -165,9 +136,11 @@ Resources:
     Type: AWS::RDS::DBInstance
     Properties:
       DBName: employees
-      AllocatedStorage: 50
+      DBInstanceIdentifier: !Sub "${AWS::StackName}-RDSInstance"
+      AllocatedStorage: 100
+      StorageType: io1
+      Iops: 2000
       DBInstanceClass: !Ref DBInstanceType
-      StorageType: gp2
       Engine: mysql
       EngineVersion: 8.0.16
       MasterUsername: !Ref DBUser
@@ -183,7 +156,8 @@ Resources:
   CacheSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: ElastiCache SG
+      GroupDescription: "ElastiCache Security Group"
+      GroupName: !Sub "${AWS::StackName}-CacheSG"
       VpcId:
         Ref: Vpc
       SecurityGroupIngress:
@@ -195,7 +169,8 @@ Resources:
   CacheSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
     Properties:
-      Description: ElastiCache Subnet Group
+      Description: "ElastiCache Subnet Group"
+      CacheSubnetGroupName: !Sub "${AWS::StackName}-SubnetGroup"
       SubnetIds:
       - Ref: PrivSubnet1
       - Ref: PrivSubnet2
@@ -205,7 +180,7 @@ Resources:
     Properties:
       AutoMinorVersionUpgrade: true
       CacheNodeType: !Ref CacheInstanceType
-      ClusterName: !Ref CacheClusterName
+      ClusterName: !Sub "${AWS::StackName}-CacheCluster"
       Engine: redis
       EngineVersion: 5.0.6
       NumCacheNodes: 1
@@ -218,7 +193,7 @@ Resources:
   DynamodbTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Ref DynamoDBTableName
+      TableName: !Sub "${AWS::StackName}-DynamoTable"
       AttributeDefinitions:
         - 
           AttributeName: "serialNumber"
@@ -234,7 +209,7 @@ Resources:
   DynamodbTableAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: aws-caching-demotable-access
+      PolicyName: !Sub "${AWS::StackName}-DynamoAccess"
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -248,7 +223,8 @@ Resources:
   DAXSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: DAX SG
+      GroupDescription: "DAX Security Group"
+      GroupName: !Sub "${AWS::StackName}-DaxSG"
       VpcId:
         Ref: Vpc
       SecurityGroupIngress:
@@ -260,8 +236,8 @@ Resources:
   DAXSubnetGroup:
     Type: AWS::DAX::SubnetGroup
     Properties:
-      SubnetGroupName: "my-dax-subnet-group" 
-      Description: "Description of my DAX subnet group" 
+      Description: "DAX subnet group"
+      SubnetGroupName: !Sub "${AWS::StackName}-DaxDubnetgroup"  
       SubnetIds:
         - !Ref PrivSubnet1
         - !Ref PrivSubnet2
@@ -269,8 +245,8 @@ Resources:
   DAXParamGroup:
     Type: AWS::DAX::ParameterGroup
     Properties:
-      ParameterGroupName: "MyDAXParameterGroup" 
-      Description: "Description for my DAX parameter group" 
+      Description: "DAX parameter group"
+      ParameterGroupName: !Sub "${AWS::StackName}-DaxParameterGroup"  
       ParameterNameValues:
          "query-ttl-millis" : "75000"
          "record-ttl-millis" : "88000"
@@ -278,7 +254,7 @@ Resources:
   DAXRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: aws-caching-demo-dax-role
+      RoleName: !Sub "${AWS::StackName}-DemoDaxRole"
       AssumeRolePolicyDocument:
         Statement:
           - Action:
@@ -291,8 +267,8 @@ Resources:
   DAXCluster:
     Type: AWS::DAX::Cluster
     Properties:
-      ClusterName: aws-caching-dax
-      Description: Cluster for aws-caching-demo
+      Description: "DAX Cluster"
+      ClusterName: !Sub "${AWS::StackName}-DaxCluster"
       IAMRoleARN: !GetAtt DAXRole.Arn
       NodeType: !Ref DAXInstanceType
       ReplicationFactor: 1
@@ -303,7 +279,8 @@ Resources:
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: ALB SG
+      GroupDescription: "ALB Security Group"
+      GroupName: !Sub "${AWS::StackName}-ALBSg"
       VpcId:
         Ref: Vpc
       SecurityGroupIngress:
@@ -315,7 +292,7 @@ Resources:
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: aws-caching-demo
+      Name: !Sub "${AWS::StackName}-ALB"
       Scheme: internet-facing
       Subnets: 
         - !Ref PubSubnet1
@@ -336,7 +313,7 @@ Resources:
   DefaultTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: aws-caching-default-target-group
+      Name: !Sub "${AWS::StackName}-DefaultTG"
       VpcId: !Ref 'Vpc'
       Port: 80
       Protocol: HTTP
@@ -344,6 +321,7 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
+      Name: !Sub "${AWS::StackName}-TG"
       VpcId: !Ref Vpc
       Port: 80
       Protocol: HTTP
@@ -384,7 +362,7 @@ Resources:
   ECSTaskRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: aws-caching-demo-ecs-task-role
+      RoleName: !Sub "${AWS::StackName}-ECSTaskRole"
       AssumeRolePolicyDocument:
         Statement:
           - Action:
@@ -398,6 +376,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: "Access to the Fargate containers"
+      GroupName: !Sub "${AWS::StackName}-FargateSG"
       VpcId: !Ref Vpc
       SecurityGroupIngress:
         - IpProtocol: -1
@@ -406,7 +385,7 @@ Resources:
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: aws-caching-demo
+      ClusterName: !Sub "${AWS::StackName}-ECSCluster"
 
   ECSTaskDefinition:
     DependsOn:
@@ -423,7 +402,7 @@ Resources:
       Cpu: 512
       Memory: 2048
       ContainerDefinitions:
-      - Name: aws-caching
+      - Name: !Sub "${AWS::StackName}-ContainerDef"
         Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/aws-caching:latest"
         PortMappings:
         - ContainerPort: 5000
@@ -438,7 +417,7 @@ Resources:
             Options:
               awslogs-group: !Ref CloudWatchLogsGroup
               awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: aws-caching-demo
+              awslogs-stream-prefix: !Sub "${AWS::StackName}-LogStream"
         Environment:
           - Name: DB_HOST
             Value: { "Fn::GetAtt": ["DatabaseInstance","Endpoint.Address"]}
@@ -449,7 +428,7 @@ Resources:
           - Name: DB_DB
             Value: "employees"
           - Name: DYNAMODB_TABLE
-            Value: !Ref DynamoDBTableName
+            Value: !Sub "${AWS::StackName}-DynamoTable"
           - Name: CACHE_HOST
             Value: { "Fn::GetAtt": ["CacheCluster","RedisEndpoint.Address"]}
           - Name: DAX_HOST
@@ -460,7 +439,8 @@ Resources:
     DependsOn:
       - LoadBalancerListener
     Properties:
-      Cluster: aws-caching-demo
+      Cluster: !GetAtt ['ECSCluster', 'Arn']
+      ServiceName: !Sub "${AWS::StackName}-ECSService"
       LaunchType: FARGATE
       TaskDefinition: 
         Ref: ECSTaskDefinition
@@ -480,7 +460,6 @@ Resources:
       - ContainerName: aws-caching
         ContainerPort: 5000
         TargetGroupArn: !Ref TargetGroup
-      TaskDefinition: !Ref ECSTaskDefinition
 
 Outputs:
   LoadBalancerUrl:
