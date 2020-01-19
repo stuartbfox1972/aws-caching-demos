@@ -4,9 +4,8 @@
     <title>AWS Caching Demos</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel='icon' href='static/favicon.ico' type='image/x-icon'/ >
-    <link rel="stylesheet" href="/static/aws-caching.css">
-    <script src="/static/aws-caching.js" type="text/javascript"></script>
+    <link rel='icon' href='static/favicon.ico' type='image/x-icon' />
+    <link rel="stylesheet" href="/static/aws-caching.css" />
   </head>
   <body>
     <section id="tabs" align="center">
@@ -18,8 +17,12 @@
           <label for="tab-1">RDS/Elasticache</label>
           <div class="content">
             <p>Accelerating RDS/MySQL lookups with AWS Elasticache</p>
-            <button onclick="triggerAWS()">Clear Cache</button>
-            <div><textarea id="responseID" readonly rows=60 cols=60 style="border: none">Results</textarea></div>
+            <div><input type="text" id="queryString" placeholder="SHOW TABLES"></div>
+            <button onclick="runQuery()">Run Query</button>
+            <button onclick="flushCache()">Clear Cache</button>
+            <BR><BR>
+            <div><textarea id="responseID" readonly rows=20 cols=60 style="border: none">Results will appear here</textarea></div>
+            <div><img src="static/employees.jpg"></div>
           </div>
         </div>
         <div class="tab">

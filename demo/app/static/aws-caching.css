@@ -1,6 +1,6 @@
 .tabs {
     position: relative;
-    min-height: 200px;
+    min-height: 1000px;
     clear: both;
     margin: 25px 0;
   }
@@ -46,11 +46,3 @@
     opacity: 1;
     transform: translateX(0);
   }
-}
-
-.textarea {
-  border: none;
-  background-color: transparent;
-  resize: none;
-  outline: none;
-}
