@@ -3,3 +3,4 @@ datetime
 flask
 mysql-connector
 redis
+hurry.filesize

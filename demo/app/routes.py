@@ -1,6 +1,7 @@
 from app import app
-from flask import render_template, Response, request
 from datetime import datetime
+from flask import render_template, Response, request
+from hurry.filesize import size
 
 import hashlib
 import json
@@ -8,6 +9,7 @@ import mysql.connector as mysql
 import os
 import pickle
 import redis
+import sys
 
 
 @app.after_request
@@ -48,21 +50,26 @@ def elasticache_query():
         stop = datetime.now()
         diff = (stop-start).total_seconds()
         payload = json.dumps({"Response": "CACHE HIT",
-                          "Duration": str(diff) + " seconds"})
+                          "Duration": str(diff) + " seconds",
+                          "Payload Size": size(sys.getsizeof(data))})
         return Response(payload, mimetype='application/json')
     else:
-        db = db_connect()
-        cursor = db.cursor()
-        query = q
-        start = datetime.now()
-        cursor.execute(query)
-        records = cursor.fetchall()
-        r.set(hex_dig, pickle.dumps(records))
-        stop = datetime.now()
-        diff = (stop-start).total_seconds()
-        payload = json.dumps({"Response": "CACHE MISS",
-                          "Duration": str(diff) + " seconds"})
-        return Response(payload, mimetype='application/json')
+        try:
+            db = db_connect()
+            cursor = db.cursor()
+            start = datetime.now()
+            cursor.execute(q)
+            data = cursor.fetchall()
+            r.set(hex_dig, pickle.dumps(data))
+            stop = datetime.now()
+            diff = (stop-start).total_seconds()
+            payload = json.dumps({"Response": "CACHE MISS",
+                                "Duration": str(diff) + " seconds",
+                                "Payload Size": size(sys.getsizeof(data))})
+            return Response(payload, mimetype='application/json')
+        except mysql.connector.Error as e:
+            payload = json.dumps({"Response": "Something went wrong: {}".format(e)})
+            return Response(payload, mimetype='application/json')
 
 @app.route('/api/v1.0/dax')
 def dax():
@@ -83,9 +90,12 @@ def redis_connect():
 
             
 def db_connect():
-    db = mysql.connect(host      = os.environ['DB_HOST'],
-                        user     = os.environ['DB_USER'],
-                        passwd   = os.environ['DB_PASS'],
-                        database = 'employees')
+    try:
+        db = mysql.connect(host      = os.environ['DB_HOST'],
+                            user     = os.environ['DB_USER'],
+                            passwd   = os.environ['DB_PASS'],
+                            database = 'employees')
 
-    return db
+        return db
+    except mysql.connector.Error as e:
+        print("Something went wrong: {}".format(err))

@@ -408,8 +408,8 @@ Resources:
         - "FARGATE"
       Family: !Ref 'AWS::StackName'
       NetworkMode: "awsvpc"
-      Cpu: 256
-      Memory: 512
+      Cpu: 512
+      Memory: 2048
       ContainerDefinitions:
       - Name: aws-caching
         Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/aws-caching:latest"
@@ -419,8 +419,8 @@ Resources:
         EntryPoint: 
           - "/src/boot.sh"
         Essential: true
-        Cpu: 256
-        Memory: 512
+        Cpu: 512
+        Memory: 2048
         LogConfiguration:
             LogDriver: awslogs
             Options:
