@@ -8,7 +8,7 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws --version
       - ACCTID=$(aws sts get-caller-identity --query Account --output text)
-      - TASKID=$(aws ecs list-tasks --cluster aws-caching-demo --query taskArns --output text| awk -F'/' '{print $2}' | sed -e s/\"//g)
+      - TASKID=$(aws ecs list-tasks --cluster awsfox-ECSCluster --query taskArns --output text| awk -F'/' '{print $2}' | sed -e s/\"//g)
       - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
       - REPOSITORY_URI=${ACCTID}.dkr.ecr.us-east-1.amazonaws.com/aws-caching
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
@@ -25,4 +25,4 @@ phases:
       - echo Pushing the Docker images...
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - aws ecs stop-task --cluster aws-caching-demo --task ${TASKID}
+      - aws ecs stop-task --cluster awsfox-ECSCluster --task ${TASKID}
