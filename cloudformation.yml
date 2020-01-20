@@ -396,9 +396,9 @@ Resources:
       TaskRoleArn: { "Fn::GetAtt": ["ECSTaskRole", "Arn"] }
       RequiresCompatibilities:
         - "FARGATE"
-      Family: !Ref 'AWS::StackName'
+      Family: !Sub "${AWS::StackName}-TaskDef"
       NetworkMode: "awsvpc"
-      Cpu: 512
+      Cpu: 1024
       Memory: 2048
       ContainerDefinitions:
       - Name: !Sub "${AWS::StackName}-ContainerDef"
@@ -409,7 +409,7 @@ Resources:
         EntryPoint: 
           - "/src/boot.sh"
         Essential: true
-        Cpu: 512
+        Cpu: 1024
         Memory: 2048
         LogConfiguration:
             LogDriver: awslogs

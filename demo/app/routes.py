@@ -32,7 +32,7 @@ def elasticache_flush():
     stop = datetime.now()
     diff = (stop-start).total_seconds()
     payload = json.dumps({"Response": "Elasticache successfully flushed",
-                          "Duration": str(diff) + " seconds"})
+                          "Duration": str(diff) + " seconds"}, indent=1)
     return Response(payload,
                     mimetype='application/json')
 

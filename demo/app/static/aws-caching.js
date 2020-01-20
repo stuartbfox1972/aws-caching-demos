@@ -23,7 +23,7 @@ function runQuery() {
     xhr.open(method, url, true);
     xhr.onreadystatechange = function () {
         if(xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-            document.getElementById("responseID").innerHTML = xhr.responseText;
+            document.getElementById("responseID").innerHTML = JSON.stringify(xhr.responseText, undefined, 2);
         }
     };
     xhr.setRequestHeader("Content-Type", "application/json");

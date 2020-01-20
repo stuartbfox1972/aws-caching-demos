@@ -3,11 +3,13 @@ import os
 import random
 import string
 
-
-if os.environ['ENDPOINT']:
+# For testing against local 
+if 'ENDPOINT' in os.environ:
     dynamodb = boto3.resource('dynamodb', endpoint_url=os.environ['ENDPOINT'])
+    print('LOCAL')
 else:
     dynamodb = boto3.resource('dynamodb')
+    print('REMOTE')
 
 table = dynamodb.Table(os.environ['DYNAMODB_TABLE'])
 
