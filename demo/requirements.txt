@@ -1,6 +1,7 @@
+amazon-dax-client
 boto3
 datetime
 flask
+hurry.filesize
 mysql-connector
 redis
-hurry.filesize

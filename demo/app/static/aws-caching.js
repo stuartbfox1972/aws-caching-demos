@@ -2,13 +2,12 @@ var apiBase = "http://"+location.hostname+"/api/v1.0"
 
 function flushCache() { 
     const xhr = new XMLHttpRequest(),
-        method = "GET",
         url=apiBase + "/elasticache/flush";
 
-    xhr.open(method, url, true);
+    xhr.open("GET", url, true);
     xhr.onreadystatechange = function () {
         if(xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-            document.getElementById("responseID").innerHTML = xhr.responseText;
+            renderJSON(xhr.responseText)
         }
     };
     xhr.setRequestHeader("Content-Type", "application/json");
@@ -17,13 +16,31 @@ function flushCache() {
 
 function runQuery() {
     const xhr = new XMLHttpRequest(),
-        method = "POST",
         url=apiBase + "/elasticache/query";
 
-    xhr.open(method, url, true);
+    xhr.open("POST", url, true);
     xhr.onreadystatechange = function () {
         if(xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-            document.getElementById("responseID").innerHTML = JSON.stringify(xhr.responseText, undefined, 2);
+            renderJSON(xhr.responseText)
+        }
+    };
+    xhr.setRequestHeader("Content-Type", "application/json");
+    qstr = document.getElementById("queryString").value
+    xhr.send(JSON.stringify({"Query": qstr}));
+}
+
+function renderJSON(incoming) {
+    document.getElementById("responseID").innerHTML = incoming;
+}
+
+function runCompare() {
+    const xhr = new XMLHttpRequest(),
+        url=apiBase + "/elasticache/compare";
+
+    xhr.open("POST", url, true);
+    xhr.onreadystatechange = function () {
+        if(xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+            renderJSON(xhr.responseText)
         }
     };
     xhr.setRequestHeader("Content-Type", "application/json");

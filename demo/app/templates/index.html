@@ -17,11 +17,12 @@
           <label for="tab-1">RDS/Elasticache</label>
           <div class="content">
             <p>Accelerating RDS/MySQL lookups with AWS Elasticache</p>
-            <div><input type="text" id="queryString" placeholder="SHOW TABLES"></div>
+            <div><input type="text" id="queryString" value="SHOW TABLES"></div>
             <button onclick="runQuery()">Run Query</button>
+            <button onclick="runCompare()">Compare</button>
             <button onclick="flushCache()">Clear Cache</button>
             <BR><BR>
-            <div><textarea id="responseID" readonly rows=5 cols=100 style="border: none">Results will appear here</textarea></div>
+            <div><textarea id="responseID" readonly rows=10 cols=100 style="border: none">Results will appear here</textarea></div>
             <BR><BR>
             <div><img src="static/employees.jpg"></div>
           </div>
