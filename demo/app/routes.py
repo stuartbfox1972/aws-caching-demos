@@ -72,6 +72,7 @@ def _elasticache_query():
             db = db_connect()
             cursor = db.cursor()
             start = datetime.now()
+            cursor.execute('RESET QUERY CACHE')
             cursor.execute(q)
             data = cursor.fetchall()
             p_data = pickle.dumps(data)
@@ -95,30 +96,33 @@ def elasticache_compare():
 
     ## Flush cache
     _elasticache_flush()
-    ## Run query
+    ## Run initial query and populate cache
     q1_res = json.loads(_elasticache_query())
     q1_time = float(q1_res['Duration'])
-    ## Run query
+    ## Run query from cache
     q2_res = json.loads(_elasticache_query())
     q2_time = float(q2_res['Duration'])
-    ## Run query
+    ## Run query from cache
     q3_res = json.loads(_elasticache_query())
     q3_time = float(q3_res['Duration'])
-    ## Run query
+    ## Run query from cache
     q4_res = json.loads(_elasticache_query())
     q4_time = float(q4_res['Duration'])
-    ## Run query
+    ## Run query from cache
     q5_res = json.loads(_elasticache_query())
     q5_time = float(q5_res['Duration'])
-    ## Run query
+    ## Run query from cache
     q6_res = json.loads(_elasticache_query())
     q6_time = float(q6_res['Duration'])
 
     avg_time =  (q2_time + q3_time + q4_time + q5_time + q6_time) / 5
-    diff = ("%.2f" % ((q1_time/avg_time)*100) )
 
-    payload = json.dumps({"MISS Query Time": q1_res['Duration'],
-                          "AVG HIT Query Time": str(avg_time),
+    diff = ("%.2f" % ((q1_time/avg_time)*100) )
+    miss = ("%.4f" % float(q1_res['Duration']))
+    hit = ("%.4f" % float(avg_time))
+
+    payload = json.dumps({"MISS Query Time": miss,
+                          "AVG HIT Query Time": hit,
                           "Measurement": "Seconds",
                           "Percentage Increase": str(diff) +"%"
                         }, indent=1)
@@ -139,7 +143,7 @@ def redis_connect():
                         db=0)
         return r
     except redis.RedisError as e:
-        payload=json.dumps({"Response": "Error Connecting to os.environ['CACHE_HOST']"}, indent=1)
+        payload=json.dumps({"Response": "Error Connecting to " + os.environ['CACHE_HOST']}, indent=1)
         return Response(payload, mimetype='application/json')
 
             

@@ -47,3 +47,17 @@ function runCompare() {
     qstr = document.getElementById("queryString").value
     xhr.send(JSON.stringify({"Query": qstr}));
 }
+
+function copyClip(q) {
+    /* Get the text field */
+    var copyText = document.getElementById(q);
+  
+    /* Select the text field */
+    copyText.select();
+    copyText.setSelectionRange(0, 99999); /*For mobile devices*/
+  
+    /* Copy the text inside the text field */
+    document.execCommand("copy");
+    document.getElementById("queryString").innerHTML = copyText.value;
+  
+}

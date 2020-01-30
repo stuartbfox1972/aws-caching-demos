@@ -4,6 +4,11 @@
     clear: both;
     margin: 25px 0;
   }
+  .instructions {
+    max-width: 50%;
+    margin: auto;
+    border: none;
+  }
   .tab {
     float: left;
   }
