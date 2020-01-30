@@ -8,49 +8,50 @@
     <link rel="stylesheet" href="/static/aws-caching.css" />
   </head>
   <body>
-    <section id="tabs" align="center">
+    <section id="tabs" align="left">
       <h1 class="section-title h1">AWS Caching Demos</h1>
       Welcome
-      <div class="tabs" style="text-align:center">
+      <div class="tabs" >
         <div class="tab">
           <input type="radio" id="tab-1" name="tab-group-1" checked>
           <label for="tab-1">RDS/Elasticache</label>
           <div class="content">
-            <div class="instructions" style="text-align:left">
-            <p>Accelerating RDS/MySQL lookups with AWS Elasticache</p>
-            Use this page to construct queries to run against the schema shown below.<br>
-            The schema and data are taken from <a href="https://github.com/datacharmer/test_db">https://github.com/datacharmer/test_db</a>
-            <br>
-            <ul>
-              <li><b>Run Query</b></li>
-              Use this button to execute your SQL query. It uses the <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/Strategies.html#Strategies.LazyLoading">Lazy Loading technique</a> to check the existance of a result set in Elasticache first before querying the database.
-              If there is no result set, the database is queried and the result set is entered into Elasticache. Construct your query and press the button several times to see the difference.
-              <li><b>Compare</b></li>
-              Use this button to calculate the percentage decrease in application latency.
-              It clears all result sets from Elasticache then executes your SQL query 6 times and calculates the difference in responsiveness.
-              <li><b>Flush Cache</b></li>
-              Use this button to clear all result sets from Elasticache.
-            </ul>
-            <br>
-            <br>
-            Here are a few sample queries you can use and their approx SQL execution times.
-            <ul>
-              <li><input type="text" value="show tables" id="q1" readonly> (0.02 seconds)<button onclick="copyClip('q1')">Use</button></li>
-              <li><input type="text" value="select * from employees" id="q2" readonly> (6-10 seconds)<button onclick="copyClip('q2')">Use</button></li>
-              <li><input type="text" value="select * from titles" id="q3" readonly> (8-12 seconds)<button onclick="copyClip('q3')">Use</button></li>
-              <li><input type="text" value="select * from salaries" id="q4" readonly> (45-50 seconds)<button onclick="copyClip('q4')">Use</button></li>
-            </ul>
-            <br>
-            <br>
+            <div style="width: 100%; overflow: hidden;">
+              <div class="instructions" style="text-align:left width: 60%; float: left;">
+                <p>Accelerating RDS/MySQL lookups with AWS Elasticache</p>
+                Use this page to construct queries to run against the schema shown to the right.<br>
+                The schema and data are taken from <a href="https://github.com/datacharmer/test_db">https://github.com/datacharmer/test_db</a>
+                <br>
+                <ul>
+                  <li><b>Run Query</b></li>
+                  Use this button to execute your SQL query. It uses the <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/Strategies.html#Strategies.LazyLoading">Lazy Loading technique</a> to check the existance of a result set in Elasticache first before querying the database.
+                  If there is no result set, the database is queried and the result set is entered into Elasticache. Construct your query and press the button several times to see the difference.
+                  <li><b>Compare</b></li>
+                  Use this button to calculate the percentage decrease in application latency.
+                  It clears all result sets from Elasticache then executes your SQL query 6 times and calculates the difference in responsiveness.
+                <li><b>Flush Cache</b></li>
+                 Use this button to clear all result sets from Elasticache.
+                </ul>
+                Here are a few sample queries you can use and their approx SQL execution times.
+                <ul>
+                  <li><input type="text" value="show tables" id="q1" readonly> (0.02 seconds)<button onclick="copyClip('q1')">Use</button></li>
+                  <li><input type="text" value="select * from employees" id="q2" readonly> (6-10 seconds)<button onclick="copyClip('q2')">Use</button></li>
+                  <li><input type="text" value="select * from titles" id="q3" readonly> (8-12 seconds)<button onclick="copyClip('q3')">Use</button></li>
+                  <li><input type="text" value="select * from salaries" id="q4" readonly> (45-50 seconds)<button onclick="copyClip('q4')">Use</button></li>
+                </ul>
+                <br>
+                <br>
+                <input type="text" id="queryString" value="SHOW TABLES"><br>
+                <button onclick="runQuery()">Run Query</button>
+                <button onclick="runCompare()">Compare</button>
+                <button onclick="flushCache()">Clear Cache</button>
+                <BR><BR>
+                <textarea id="responseID" readonly rows=10 cols=100 style="border: none">Results will appear here</textarea>
+              </div>
+              <div style="margin-left: 620px;">
+                <img src="static/employees.jpg">
+              </div>
             </div>
-            <div><input type="text" id="queryString" value="SHOW TABLES"></div>
-            <button onclick="runQuery()">Run Query</button>
-            <button onclick="runCompare()">Compare</button>
-            <button onclick="flushCache()">Clear Cache</button>
-            <BR><BR>
-            <div><textarea id="responseID" readonly rows=10 cols=100 style="border: none">Results will appear here</textarea></div>
-            <BR><BR>
-            <div><img src="static/employees.jpg"></div>
           </div>
           <div id="image"> </div>
         </div>
