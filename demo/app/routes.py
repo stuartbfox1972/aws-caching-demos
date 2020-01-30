@@ -72,7 +72,7 @@ def _elasticache_query():
             db = db_connect()
             cursor = db.cursor()
             start = datetime.now()
-            cursor.execute('RESET QUERY CACHE')
+            #cursor.execute('RESET QUERY CACHE')
             cursor.execute(q)
             data = cursor.fetchall()
             p_data = pickle.dumps(data)
