@@ -25,21 +25,20 @@
               <li><b>Run Query</b></li>
               Use this button to execute your SQL query. It uses the <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/Strategies.html#Strategies.LazyLoading">Lazy Loading technique</a> to check the existance of a result set in Elasticache first before querying the database.
               If there is no result set, the database is queried and the result set is entered into Elasticache. Construct your query and press the button several times to see the difference.
-              <br>The function calls "RESET QUERY CACHE" against the RDS/MySQL before every query.
               <li><b>Compare</b></li>
               Use this button to calculate the percentage decrease in application latency.
-              It clears all result sets from Elasticache, calls "RESET QUERY CACHE" against the RDS/MySQL before every query then executes your SQL query 6 times and calculates the difference in responsiveness.
+              It clears all result sets from Elasticache then executes your SQL query 6 times and calculates the difference in responsiveness.
               <li><b>Flush Cache</b></li>
               Use this button to clear all result sets from Elasticache.
             </ul>
             <br>
             <br>
-            Here are a few sample queries you can use and their average SQL execution times.
+            Here are a few sample queries you can use and their approx SQL execution times.
             <ul>
               <li><input type="text" value="show tables" id="q1" readonly> (0.02 seconds)<button onclick="copyClip('q1')">Use</button></li>
-              <li><input type="text" value="select * from employees" id="q2" readonly> (10 seconds)<button onclick="copyClip('q2')">Use</button></li>
-              <li><input type="text" value="select * from titles" id="q3" readonly> (12 seconds)<button onclick="copyClip('q3')">Use</button></li>
-              <li><input type="text" value="select * from salaries" id="q4" readonly> ( seconds)<button onclick="copyClip('q4')">Use</button></li>
+              <li><input type="text" value="select * from employees" id="q2" readonly> (6-10 seconds)<button onclick="copyClip('q2')">Use</button></li>
+              <li><input type="text" value="select * from titles" id="q3" readonly> (8-12 seconds)<button onclick="copyClip('q3')">Use</button></li>
+              <li><input type="text" value="select * from salaries" id="q4" readonly> (45-50 seconds)<button onclick="copyClip('q4')">Use</button></li>
             </ul>
             <br>
             <br>
