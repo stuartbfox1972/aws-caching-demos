@@ -1,0 +1,29 @@
+version: '3.1'
+
+services:
+  db:
+    image: mariadb:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    ports:
+      - "8000:8000"
+
+  redis:
+    image: "redis:alpine"
+
+  aws-cache:
+    image: aws-cache:latest
+    ports:
+    - 80:5000
+    env_file:
+      local.env
+
+  s3:
+    image: adobe/s3mock:latest
+    ports:
+    - 9090:9090
+    - 9191:9191

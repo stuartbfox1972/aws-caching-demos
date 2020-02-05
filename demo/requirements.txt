@@ -1,4 +1,5 @@
 amazon-dax-client
+aws-xray-sdk
 boto3
 datetime
 flask

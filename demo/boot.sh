@@ -21,5 +21,7 @@ cd ${HOME}
 
 python -u check_dynamo.py &
 
+/usr/bin/xray --bind=0.0.0.0:2000 --bind-tcp=0.0.0.0:2000 &
+
 # Start flask listening on all interfaces
 exec flask run --host=0.0.0.0 
