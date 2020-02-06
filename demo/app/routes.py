@@ -56,8 +56,9 @@ def elasticache_query():
 def _elasticache_query():
     r = redis_connect()
     content = request.get_json(silent=True)
-    q = content['Query'].encode('utf-8')
-    hex_dig = hashlib.sha256(q).hexdigest()
+    key = os.environ['DB_DB'] + ':' + content['Query']
+    query = content['Query']
+    hex_dig = hashlib.sha256(key.encode('utf-8')).hexdigest()
 
     if r.exists(hex_dig):
         start = datetime.now()
@@ -76,7 +77,7 @@ def _elasticache_query():
             cursor = db.cursor()
             start = datetime.now()
             #cursor.execute('RESET QUERY CACHE')
-            cursor.execute(q)
+            cursor.execute(query)
             data = cursor.fetchall()
             p_data = pickle.dumps(data)
             r.set(hex_dig, p_data)
@@ -127,6 +128,7 @@ def elasticache_compare():
     payload = json.dumps({"MISS Query Time": miss,
                           "AVG HIT Query Time": hit,
                           "Measurement": "Seconds",
+                          "Payload Size": q1_res['Payload Size'],
                           "Percentage Increase": str(diff) +"%"
                         }, indent=1)
 

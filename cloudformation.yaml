@@ -36,6 +36,10 @@ Metadata:
         Parameters:
           - PubSubnet1
           - PubSubnet2
+      - Label:
+          default: "S3 Bucket Name"
+        Parameters:
+          - S3BucketName
 
 Parameters:
   Vpc:
@@ -372,6 +376,25 @@ Resources:
               Service:
               - ecs-tasks.amazonaws.com
 
+  S3BucketAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${AWS::StackName}-S3BucketAccess"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:ListBucket
+            - s3:DeleteObject
+          Resource:
+            - !Join ['', ['arn:aws:s3:::', !Ref 'S3Bucket']]
+            - !Join ['', ['arn:aws:s3:::', !Ref 'S3Bucket', /*]]
+      Roles:
+        - !Ref ECSTaskRole
+        
   ECSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -432,6 +455,8 @@ Resources:
             Value: { "Fn::GetAtt": ["CacheCluster","RedisEndpoint.Address"]}
           - Name: DAX_HOST
             Value: { "Fn::GetAtt": ["DAXCluster", "ClusterDiscoveryEndpoint"] }
+          - Name: BUCKET_NAME
+            Value: !Ref S3Bucket
 
   ECSService:
     Type: 'AWS::ECS::Service'
@@ -459,6 +484,9 @@ Resources:
       - ContainerName: !Sub "${AWS::StackName}-ContainerDef"
         ContainerPort: 5000
         TargetGroupArn: !Ref TargetGroup
+        
+  S3Bucket:
+    Type: AWS::S3::Bucket
 
 Outputs:
   LoadBalancerUrl:
