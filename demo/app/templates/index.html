@@ -43,8 +43,8 @@
                 <br>
                 <div align="center">
                   <input type="text" id="queryString" value="SHOW TABLES"><br>
-                  <button onclick="runQuery()">Run Query</button>
-                  <button onclick="runCompare()">Compare</button>
+                  <button onclick="runRDSQuery()">Run Query</button>
+                  <button onclick="runRDSCompare()">Compare</button>
                   <button onclick="flushCache()">Clear Cache</button>
                   <BR><BR>
                   <textarea id="responseID" readonly rows=10 cols=100 style="border: none">Results will appear here</textarea>
@@ -61,7 +61,21 @@
           <input type="radio" id="tab-2" name="tab-group-1">
           <label for="tab-2">S3/Elasticache</label>
           <div class="content">
-            <p>Accelerating S3 object lookups with AWS Elasticache</p>
+            <div class="instructions" style="text-align:left width: 60%; float: left;">
+              <p>Accelerating S3 object lookups with AWS Elasticache</p>
+              <ul>
+                <li><b>Flush Cache</b></li>
+                 Use this button to clear all result sets from Elasticache.
+              </ul>
+              <br>
+              <br>
+              <div align="center">
+                <button onclick="runS3Prepare()">Run Query</button>
+                <button onclick="flushCache()">Clear Cache</button>
+                <BR><BR>
+                <textarea id="responseID" readonly rows=10 cols=100 style="border: none">Results will appear here</textarea>
+              </div>
+            </div>    
           </div>
         </div>
         <div class="tab">

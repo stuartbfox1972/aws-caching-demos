@@ -14,7 +14,7 @@ function flushCache() {
     xhr.send();
 }
 
-function runQuery() {
+function runRDSQuery() {
     const xhr = new XMLHttpRequest(),
         url=apiBase + "/elasticache/query";
 
@@ -33,7 +33,7 @@ function renderJSON(incoming) {
     document.getElementById("responseID").innerHTML = incoming;
 }
 
-function runCompare() {
+function runRDSCompare() {
     const xhr = new XMLHttpRequest(),
         url=apiBase + "/elasticache/compare";
 
@@ -60,4 +60,18 @@ function copyClip(q) {
     document.execCommand("copy");
     document.getElementById("queryString").innerHTML = copyText.value;
   
+}
+
+function runS3Prepare() {
+    const xhr = new XMLHttpRequest(),
+    url=apiBase + "/s3/prepare";
+
+    xhr.open("GET", url, true);
+    xhr.onreadystatechange = function () {
+        if(xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+            renderJSON(xhr.responseText)
+        }
+    };
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.send();
 }

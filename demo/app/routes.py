@@ -1,8 +1,7 @@
 from app import app
-#from app.elasticache import *
-from app.elasticache import _elasticache_compare, _elasticache_flush, _elasticache_query
-from app.dax import *
-from app.s3 import *
+from app.elasticache import _elasticache_flush
+from app.rds import _rds_compare, _rds_query
+from app.s3 import _s3_prepare, _s3_clean, _s3_query
 from flask import render_template, Response
 
 
@@ -27,17 +26,35 @@ def elasticache_flush():
 
 @app.route('/api/v1.0/elasticache/query', methods=['POST'])
 def elasticache_query():
-    payload = _elasticache_query()
+    payload = _rds_query()
     return Response(payload, mimetype='application/json')
 
 
 @app.route('/api/v1.0/elasticache/compare', methods=['POST'])
 def elasticache_compare():
-    payload = _elasticache_compare()
+    payload = _rds_compare()
     return Response(payload, mimetype='application/json')
 
 
-@app.route('/api/v1.0/dax/query')
-def dax():
-    payload = _dax_query()
+@app.route('/api/v1.0/s3/prepare')
+def s3_prepare():
+    payload = _s3_prepare()
+    return Response(payload, mimetype='application/json')
+
+
+@app.route('/api/v1.0/s3/clean')
+def s3_clean():
+    payload = _s3_clean()
+    return Response(payload, mimetype='application/json')
+
+
+@app.route('/api/v1.0/s3/query')
+def s3_query():
+    payload = _s3_query()
+    return Response(payload, mimetype='application/json')
+
+
+@app.route('/api/v1.0/s3/compare')
+def s3_compare():
+    payload = _s3_compare()
     return Response(payload, mimetype='application/json')

@@ -4,8 +4,8 @@ import random
 import string
 
 # For testing against local 
-if 'ENDPOINT' in os.environ:
-    dynamodb = boto3.resource('dynamodb', endpoint_url=os.environ['ENDPOINT'])
+if 'DYNAMODB_ENDPOINT' in os.environ:
+    dynamodb = boto3.resource('dynamodb', endpoint_url=os.environ['DYNAMODB_ENDPOINT'])
     print('LOCAL')
 else:
     dynamodb = boto3.resource('dynamodb')

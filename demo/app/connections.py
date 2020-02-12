@@ -1,11 +1,12 @@
 from flask import Response
 
+import boto3
 import json
 import mysql.connector as mysql
 import os
 import redis
 
-def redis_connect():
+def _elasticache_connect():
     try:
         r = redis.Redis(host=os.environ['CACHE_HOST'],
                         port=6379,
@@ -16,7 +17,7 @@ def redis_connect():
         return Response(payload, mimetype='application/json')
 
             
-def db_connect():
+def _rds_connect():
     try:
         db = mysql.connect(host      = os.environ['DB_HOST'],
                             user     = os.environ['DB_USER'],
@@ -24,5 +25,24 @@ def db_connect():
                             database = 'employees')
 
         return db
-    except mysql.connector.Error as e:
+    except mysql.Error as e:
         print("Something went wrong: {}".format(e))
+
+
+def _dax_connect():
+    return
+
+
+def _dynamodb_connect():
+    return
+
+
+def _s3_connect():
+    if 'S3_ENDPOINT' in os.environ:
+        s3 = boto3.resource('s3', endpoint_url=os.environ['S3_ENDPOINT'])
+    else:
+        s3 = boto3.resource('s3')
+
+    bucket = s3.Bucket(os.environ['S3_BUCKET'])
+
+    return (s3, bucket)

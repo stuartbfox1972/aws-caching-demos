@@ -1,6 +1,7 @@
 amazon-dax-client
 aws-xray-sdk
 boto3
+botocore
 datetime
 flask
 hurry.filesize
