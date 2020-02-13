@@ -455,7 +455,7 @@ Resources:
             Value: { "Fn::GetAtt": ["CacheCluster","RedisEndpoint.Address"]}
           - Name: DAX_HOST
             Value: { "Fn::GetAtt": ["DAXCluster", "ClusterDiscoveryEndpoint"] }
-          - Name: BUCKET_NAME
+          - Name: S3_BUCKET
             Value: !Ref S3Bucket
 
   ECSService:
