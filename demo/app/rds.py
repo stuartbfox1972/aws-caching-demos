@@ -21,7 +21,7 @@ def _rds_query():
 
     if r.exists(hex_dig):
         start = datetime.now()
-        data = r.get(hex_dig)
+        data = pickle.loads(r.get(hex_dig))
         stop = datetime.now()
         diff = (stop-start).total_seconds()
         payload = json.dumps({"Response": "CACHE HIT",

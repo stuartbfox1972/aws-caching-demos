@@ -16,7 +16,7 @@ function flushCache() {
 
 function runRDSQuery() {
     const xhr = new XMLHttpRequest(),
-        url=apiBase + "/elasticache/query";
+        url=apiBase + "/rds/query";
 
     xhr.open("POST", url, true);
     xhr.onreadystatechange = function () {
@@ -35,7 +35,7 @@ function renderJSON(incoming) {
 
 function runRDSCompare() {
     const xhr = new XMLHttpRequest(),
-        url=apiBase + "/elasticache/compare";
+        url=apiBase + "/rds/compare";
 
     xhr.open("POST", url, true);
     xhr.onreadystatechange = function () {

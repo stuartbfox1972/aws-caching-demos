@@ -24,14 +24,14 @@ def elasticache_flush():
     return Response(payload, mimetype='application/json')
 
 
-@app.route('/api/v1.0/elasticache/query', methods=['POST'])
-def elasticache_query():
+@app.route('/api/v1.0/rds/query', methods=['POST'])
+def rds_query():
     payload = _rds_query()
     return Response(payload, mimetype='application/json')
 
 
-@app.route('/api/v1.0/elasticache/compare', methods=['POST'])
-def elasticache_compare():
+@app.route('/api/v1.0/rds/compare', methods=['POST'])
+def rds_compare():
     payload = _rds_compare()
     return Response(payload, mimetype='application/json')
 

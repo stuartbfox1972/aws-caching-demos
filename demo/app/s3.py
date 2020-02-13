@@ -33,21 +33,23 @@ def _s3_query():
     r = _elasticache_connect()
     s3, bucket = _s3_connect()
     f = random.randint(0, BATCH)
-    key = 'S3:' + (os.environ['S3_BUCKET']) + ':' + 'dummy' + str(f)
+    fname = 'dummy' + str(f)
+    key = 'S3:' + (os.environ['S3_BUCKET']) + ':' + fname
     hex_dig = hashlib.sha256(key.encode('utf-8')).hexdigest()
     if r.exists(hex_dig):
         start = datetime.now()
-        data = r.get(hex_dig)
+        data = pickle.loads(r.get(hex_dig))
         stop = datetime.now()
         diff = (stop-start).total_seconds()
         payload = json.dumps({"Response": "CACHE HIT",
                               "Duration": str(diff),
                               "Measurement": "Seconds",
+                              "Payload": fname,
                               "Payload Size": size(sys.getsizeof(data))},
                               indent=1)
     else:
         start = datetime.now()
-        obj = s3.Object(os.environ['S3_BUCKET'], 'dummy1')
+        obj = s3.Object(os.environ['S3_BUCKET'], fname)
         data = obj.get()['Body'].read().decode('utf-8')
         p_data = pickle.dumps(data)
         r.set(hex_dig, p_data)
@@ -56,6 +58,7 @@ def _s3_query():
         payload = json.dumps({"Response": "CACHE MISS",
                               "Duration": str(diff),
                               "Measurement": "Seconds",
+                              "Payload": fname,
                               "Payload Size": size(sys.getsizeof(data))},
                               indent=1)
     
@@ -71,7 +74,6 @@ def _s3_clean():
     keys = bucket.objects.all()
     for obj in bucket.objects.all():
         bucket.Object(obj.key).delete()
-        print(obj.key)
 
     stop = datetime.now()
     diff = (stop-start).total_seconds()
