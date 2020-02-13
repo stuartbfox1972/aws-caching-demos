@@ -10,20 +10,21 @@ import random
 import string
 import sys
 
-BATCH=10
+BATCH=500
 
 def _s3_prepare():
     s3, bucket = _s3_connect()
     start = datetime.now()
     for i in range(0, BATCH):
         data = ''.join(random.choices(string.ascii_uppercase + 
-                    string.digits, k = 10240000))
+                    string.digits, k = 5120000))
         bucket.put_object(Key="dummy" + str(i),
                           Body=data)
     stop = datetime.now()
     diff = (stop-start).total_seconds()
 
     payload = json.dumps({"Response": "S3 data successfully created",
+                          "Objects Created": str(BATCH),
                           "Duration": str(diff),
                           "Measurement": "Seconds"}, indent=1)
     return payload
@@ -52,7 +53,7 @@ def _s3_query():
         obj = s3.Object(os.environ['S3_BUCKET'], fname)
         data = obj.get()['Body'].read().decode('utf-8')
         p_data = pickle.dumps(data)
-        r.set(hex_dig, p_data)
+        r.set(hex_dig, p_data, ex=900)
         stop = datetime.now()
         diff = (stop-start).total_seconds()
         payload = json.dumps({"Response": "CACHE MISS",
@@ -69,16 +70,19 @@ def _s3_compare():
     return "Compare"
 
 def _s3_clean():
+    counter = 0
     start = datetime.now()
     s3, bucket = _s3_connect()
     keys = bucket.objects.all()
     for obj in bucket.objects.all():
+        counter += 1
         bucket.Object(obj.key).delete()
 
     stop = datetime.now()
     diff = (stop-start).total_seconds()
 
     payload = json.dumps({"Response": "S3 data successfully deleted",
+                          "Objects Deleted": str(counter),
                           "Duration": str(diff),
                           "Measurement": "Seconds"}, indent=1)
     return payload

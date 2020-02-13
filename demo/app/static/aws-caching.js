@@ -1,4 +1,4 @@
-var apiBase = "http://"+location.hostname+"/api/v1.0"
+var apiBase = "http://"+location.hostname+"/api/v1.0";
 
 function flushCache() { 
     const xhr = new XMLHttpRequest(),
@@ -65,6 +65,34 @@ function copyClip(q) {
 function runS3Prepare() {
     const xhr = new XMLHttpRequest(),
     url=apiBase + "/s3/prepare";
+
+    xhr.open("GET", url, true);
+    xhr.onreadystatechange = function () {
+        if(xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+            renderJSON(xhr.responseText)
+        }
+    };
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.send();
+}
+
+function runS3Clean() {
+    const xhr = new XMLHttpRequest(),
+    url=apiBase + "/s3/clean";
+
+    xhr.open("GET", url, true);
+    xhr.onreadystatechange = function () {
+        if(xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+            renderJSON(xhr.responseText)
+        }
+    };
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.send();
+}
+
+function runS3Query() {
+    const xhr = new XMLHttpRequest(),
+    url=apiBase + "/s3/query";
 
     xhr.open("GET", url, true);
     xhr.onreadystatechange = function () {

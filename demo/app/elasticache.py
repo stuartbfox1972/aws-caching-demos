@@ -15,5 +15,5 @@ def _elasticache_flush():
     diff = (stop-start).total_seconds()
     payload = json.dumps({"Response": "Elasticache successfully flushed",
                           "Duration": str(diff),
-                          "Measurement": "Seconds"}, indent=1)
+                          "Measurement": "Seconds"}, indent=2)
     return payload

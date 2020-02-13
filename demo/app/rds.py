@@ -36,7 +36,7 @@ def _rds_query():
         cursor.execute(query)
         data = cursor.fetchall()
         p_data = pickle.dumps(data)
-        r.set(hex_dig, p_data)
+        r.set(hex_dig, p_data, ex=900)
         stop = datetime.now()
         diff = (stop-start).total_seconds()
         payload = json.dumps({"Response": "CACHE MISS",

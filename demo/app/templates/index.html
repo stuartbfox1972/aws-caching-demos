@@ -10,7 +10,14 @@
   <body>
     <section id="tabs" align="left">
       <h1 class="section-title h1">AWS Caching Demos</h1>
-      Welcome
+      <div style="width: 100%; overflow: hidden;">
+        <div class="welcome" style="text-align:left width: 60%; float: left;">
+          Welcome
+        </div>
+        <div style="margin-left: 80%;">
+          <textarea id="responseID" readonly rows=7 cols=100 style="border: none">Results will appear here</textarea>
+        </div>
+      </div>
       <div class="tabs" >
         <div class="tab">
           <input type="radio" id="tab-1" name="tab-group-1" checked>
@@ -46,8 +53,6 @@
                   <button onclick="runRDSQuery()">Run Query</button>
                   <button onclick="runRDSCompare()">Compare</button>
                   <button onclick="flushCache()">Clear Cache</button>
-                  <BR><BR>
-                  <textarea id="responseID" readonly rows=10 cols=100 style="border: none">Results will appear here</textarea>
                   </div>
               </div>
               <div style="margin-left: 620px;">
@@ -64,16 +69,22 @@
             <div class="instructions" style="text-align:left width: 60%; float: left;">
               <p>Accelerating S3 object lookups with AWS Elasticache</p>
               <ul>
+                <li><b>Prepare S3</b></li>
+                Use thi button to write dummy data to S3
+                <li><b>Run Query</b></li>
+                Use this button to downlad a file from either S3 or Elasticache
+                <li><b>Clean S3</b></li>
+                Use this button to delete dummy files from S3.
                 <li><b>Flush Cache</b></li>
-                 Use this button to clear all result sets from Elasticache.
+                Use this button to clear all result sets from Elasticache.
               </ul>
               <br>
               <br>
               <div align="center">
-                <button onclick="runS3Prepare()">Run Query</button>
+                <button onclick="runS3Prepare()">Prepare S3</button>
+                <button onclick="runS3Query()">Run Query</button>
+                <button onclick="runS3Clean()">Clean S3</button>
                 <button onclick="flushCache()">Clear Cache</button>
-                <BR><BR>
-                <textarea id="responseID" readonly rows=10 cols=100 style="border: none">Results will appear here</textarea>
               </div>
             </div>    
           </div>
