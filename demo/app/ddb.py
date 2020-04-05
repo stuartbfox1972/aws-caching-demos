@@ -55,9 +55,9 @@ def _ddb_query():
             KeyConditionExpression=Key('sensorName').eq(content['Query']),
             ScanIndexForward=True
         )
-
+        ddbcount=0
         for ddbd in ddb_data['Items']:
-            next
+            ddbcount+=1
         ddb_stop = datetime.now()
         ddb_diff = (ddb_stop-ddb_start).total_seconds()
 
@@ -67,15 +67,17 @@ def _ddb_query():
             KeyConditionExpression=Key('sensorName').eq(content['Query']),
             ScanIndexForward=True
         )
-
+        daxcount=0
         for dax in dax_data['Items']:
-            next
+            daxcount+=1
         dax_stop = datetime.now()
         dax_diff = (dax_stop-dax_start).total_seconds()
 
-        diff = ("%.2f" % ((dax_diff/ddb_diff)*100) )
-        payload = json.dumps({"DAX Time": str(dax_diff),
-                              "DynamoDB Time": str(ddb_diff),
+        diff = ("%.2f" % ((ddb_diff/dax_diff)*100) )
+        payload = json.dumps({"DynamoDB Time": str(ddb_diff),
+                              "DynamoDB Items" : str(ddbcount),
+                              "DAX Time": str(dax_diff),
+                              "DAX Items" : str(daxcount),
                               "Measurement": "Seconds",
                               "Percentage Increase": str(diff) +"%"},
                               indent=1)
