@@ -36,9 +36,11 @@ def _ddb_query():
         dax_stop = datetime.now()
         dax_diff = (dax_stop-dax_start).total_seconds()
 
+        diff = ("%.2f" % ((dax_diff/ddb_diff)*100) )
         payload = json.dumps({"DAX Time": str(dax_diff),
                               "DynamoDB Time": str(ddb_diff),
-                              "Measurement": "Seconds"},
+                              "Measurement": "Seconds",
+                              "Percentage Increase": str(diff) +"%"},
                               indent=1)
 
         return payload
@@ -71,9 +73,11 @@ def _ddb_query():
         dax_stop = datetime.now()
         dax_diff = (dax_stop-dax_start).total_seconds()
 
+        diff = ("%.2f" % ((dax_diff/ddb_diff)*100) )
         payload = json.dumps({"DAX Time": str(dax_diff),
                               "DynamoDB Time": str(ddb_diff),
-                              "Measurement": "Seconds"},
+                              "Measurement": "Seconds",
+                              "Percentage Increase": str(diff) +"%"},
                               indent=1)
 
         return payload

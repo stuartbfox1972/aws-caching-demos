@@ -10,19 +10,21 @@ import random
 import string
 import time
 
-# For testing against local 
-if 'DYNAMODB_ENDPOINT' in os.environ:
-    dynamodb = boto3.resource('dynamodb', endpoint_url=os.environ['DYNAMODB_ENDPOINT'])
-else:
-    dynamodb = boto3.resource('dynamodb')
-
 NORTHERNMOST = 49.
 SOUTHERNMOST = 25.
 EASTERNMOST  = -66.
 WESTERNMOST  = -124.
-SENSORS      = 100
-RECORDS      = 1000
+SENSORS      = 1000
+RECORDS      = 10000
 T            = SENSORS*RECORDS
+
+# For testing against local
+if 'DYNAMODB_ENDPOINT' in os.environ:
+    dynamodb = boto3.resource('dynamodb', endpoint_url=os.environ['DYNAMODB_ENDPOINT'])
+    SENSORS = SENSORS/100
+    RECORDS = RECORDS/100
+else:
+    dynamodb = boto3.resource('dynamodb')
 
 sensorLocation = dynamodb.Table(os.environ['SENSORLOCATION_TABLE'])
 sensorData = dynamodb.Table(os.environ['SENSORDATA_TABLE'])
@@ -48,8 +50,7 @@ if 'Item' not in item:
     
     for i in range(1, SENSORS):
         sensor = 'sensor' + str(i)
-        if 'DYNAMODB_ENDPOINT' in os.environ:
-            print(sensor)
+        print(sensor)
         lat,lon = _gen_lat_lng()
         sensorLocation.put_item(
             Item={
