@@ -25,6 +25,7 @@ if 'DYNAMODB_ENDPOINT' in os.environ:
     SENSORS = SENSORS/100
     RECORDS = RECORDS/100
 else:
+    region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
     endpoint_url, endpoint_port = os.environ.get('DAX_HOST').split(':')
     store = AmazonDaxClient.resource(region_name=region,
                                      endpoint_url=endpoint_url)
