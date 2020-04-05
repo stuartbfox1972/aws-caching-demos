@@ -290,6 +290,21 @@ Resources:
               Service:
               - dax.amazonaws.com
 
+  DAXAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${AWS::StackName}-DAXAccess"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Action:
+            - dax:*
+          Resource:
+            - !Sub arn:aws:dax:${AWS::Region}:${AWS::AccountId}:cache/${AWS::StackName}-daxcluster
+      Roles:
+        - !Ref ECSTaskRole
+  
   DAXCluster:
     Type: AWS::DAX::Cluster
     Properties:
@@ -397,25 +412,6 @@ Resources:
             Principal:
               Service:
               - ecs-tasks.amazonaws.com
-
-  S3BucketAccessPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub "${AWS::StackName}-S3BucketAccess"
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-        - Effect: Allow
-          Action:
-            - s3:PutObject
-            - s3:GetObject
-            - s3:ListBucket
-            - s3:DeleteObject
-          Resource:
-            - !Join ['', ['arn:aws:s3:::', !Ref 'S3Bucket']]
-            - !Join ['', ['arn:aws:s3:::', !Ref 'S3Bucket', /*]]
-      Roles:
-        - !Ref ECSTaskRole
         
   ECSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -511,6 +507,25 @@ Resources:
         
   S3Bucket:
     Type: AWS::S3::Bucket
+  
+  S3BucketAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${AWS::StackName}-S3BucketAccess"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:ListBucket
+            - s3:DeleteObject
+          Resource:
+            - !Join ['', ['arn:aws:s3:::', !Ref 'S3Bucket']]
+            - !Join ['', ['arn:aws:s3:::', !Ref 'S3Bucket', /*]]
+      Roles:
+        - !Ref ECSTaskRole
 
 Outputs:
   LoadBalancerUrl:

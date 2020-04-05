@@ -9,12 +9,14 @@ import pprint
 import sys
 
 def _ddb_query():
-    ddb, dax   = _dynamodb_connect()
-    content    = request.json
+    ddb, dax = _dynamodb_connect()
+    content  = request.json
+    SLT      = os.environ['SENSORLOCATION_TABLE']
+    SDT      = os.environ['SENSORDATA_TABLE']
 
     if content['Query'] == 'locations':
-        ddb_loc_table = ddb.Table('sensorLocation')
-        dax_loc_table = dax.Table('sensorLocation')
+        ddb_loc_table = ddb.Table(SLT)
+        dax_loc_table = dax.Table(SLT)
 
         # Run DynamoDB table scan
         ddb_start = datetime.now()
@@ -41,8 +43,8 @@ def _ddb_query():
         return payload
 
     elif content['Query'].startswith('sensor'):
-        ddb_data_table = ddb.Table('sensorData')
-        dax_data_table = dax.Table('sensorData')
+        ddb_data_table = ddb.Table(SDT)
+        dax_data_table = dax.Table(SDT)
 
         # Run DynamoDB query
         ddb_start = datetime.now()
