@@ -36,20 +36,15 @@ def _dynamodb_connect():
         dynamo_client = boto3.resource('dynamodb',
                                   region_name=region,
                                   endpoint_url=os.environ['DYNAMODB_ENDPOINT'])
-        #dynamo_client = session.create_client('dynamodb',
-        #                                       region_name=region,
-        #                                       endpoint_url=os.environ['DYNAMODB_ENDPOINT'])
         dax_client = boto3.resource('dynamodb',
                                   region_name=region,
                                   endpoint_url=os.environ['DYNAMODB_ENDPOINT'])
-        #dax_client = session.create_client('dynamodb',
-        #                                    region_name=region,
-        #                                    endpoint_url=os.environ['DYNAMODB_ENDPOINT'])
     else:
         endpoint_url, endpoint_port = os.environ.get('DAX_HOST').split(':')
-        dynamo_client = session.create_client('dynamodb',
-                                               region_name=region)
-        dax_client = amazondax.AmazonDaxClient(session, region_name=region, endpoints=endpoint_url)
+        dynamo_client = boto3.resource('dynamodb',
+                                        region_name=region)
+        dax_client = AmazonDaxClient.resource(region_name=region,
+                                              endpoint_url=endpoint_url)
     
     return (dynamo_client, dax_client)
 

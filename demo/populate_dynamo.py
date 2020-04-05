@@ -48,7 +48,8 @@ if 'Item' not in item:
     
     for i in range(1, SENSORS):
         sensor = 'sensor' + str(i)
-        print(sensor)
+        if 'DYNAMODB_ENDPOINT' in os.environ:
+            print(sensor)
         lat,lon = _gen_lat_lng()
         sensorLocation.put_item(
             Item={
@@ -60,7 +61,8 @@ if 'Item' not in item:
         with sensorData.batch_writer() as batchData:
             for p in range(0, RECORDS):
                 T-=1
-                print(T)
+                if 'DYNAMODB_ENDPOINT' in os.environ:
+                    print(T)
                 startTime += 10
                 item = {'sensorName': sensor, 'timestamp': startTime, 'datapoint': random.randint(20,90)}
                 batchData.put_item(Item=item)
