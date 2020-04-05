@@ -7,10 +7,10 @@ import os
 import redis
 
 
-def _elasticache_flush():
-    r = _elasticache_connect()
+def _elasticache_flush(space):
+    r = _elasticache_connect(space)
     start = datetime.now()
-    r.flushall()
+    r.flushdb()
     stop = datetime.now()
     diff = (stop-start).total_seconds()
     payload = json.dumps({"Response": "Elasticache successfully flushed",

@@ -19,7 +19,7 @@ cd ${HOME}
 # Check if the dynamo table is populated with 50000 dummy records
 # If not, make it so
 
-python -u check_dynamo.py &
+python -u populate_dynamo.py &
 
 /usr/bin/xray --bind=0.0.0.0:2000 --bind-tcp=0.0.0.0:2000 &
 

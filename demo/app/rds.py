@@ -11,9 +11,10 @@ import pickle
 import sys
 import time
 
+KEYSPACE=0
 
 def _rds_query():
-    r = _elasticache_connect()
+    r = _elasticache_connect(KEYSPACE)
     content = request.get_json(silent=True)
     key = 'RDS:' + os.environ['DB_DB'] + ':' + content['Query']
     query = content['Query']
@@ -47,9 +48,10 @@ def _rds_query():
 
     return payload
 
+    
 def _rds_compare():
     ## Flush cache
-    _elasticache_flush()
+    _elasticache_flush(KEYSPACE)
     ## Run initial query and populate cache
     q1_res = json.loads(_rds_query())
     q1_time = float(q1_res['Duration'])
@@ -81,4 +83,16 @@ def _rds_compare():
                           "Payload Size": q1_res['Payload Size'],
                           "Percentage Increase": str(diff) +"%"
                         }, indent=1)
+    return payload
+
+def _rds_flush():
+    start = datetime.now()
+    _elasticache_flush(KEYSPACE)
+    stop = datetime.now()
+    diff = (stop-start).total_seconds()
+
+    payload = json.dumps({"Response": "Keys successfully deleted from Elasticache",
+                          "Keyspace": KEYSPACE,
+                          "Duration": str(diff),
+                          "Measurement": "Seconds"}, indent=1)
     return payload

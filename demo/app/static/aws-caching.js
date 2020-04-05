@@ -1,8 +1,22 @@
 var apiBase = "http://"+location.hostname+"/api/v1.0";
 
-function flushCache() { 
+function rdsFlushCache() { 
     const xhr = new XMLHttpRequest(),
-        url=apiBase + "/elasticache/flush";
+        url=apiBase + "/rds/flush";
+
+    xhr.open("GET", url, true);
+    xhr.onreadystatechange = function () {
+        if(xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+            renderJSON(xhr.responseText)
+        }
+    };
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.send();
+}
+
+function s3FlushCache() { 
+    const xhr = new XMLHttpRequest(),
+        url=apiBase + "/s3/flush";
 
     xhr.open("GET", url, true);
     xhr.onreadystatechange = function () {

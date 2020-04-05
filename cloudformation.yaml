@@ -194,18 +194,38 @@ Resources:
       CacheSubnetGroupName:
         Ref: CacheSubnetGroup
 
-  DynamodbTable:
+  SensorLocationTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub "${AWS::StackName}-DynamoTable"
-      AttributeDefinitions:
-        - 
-          AttributeName: "serialNumber"
-          AttributeType: "N"
+      TableName: !Sub "${AWS::StackName}-sensorLocation"
       KeySchema:
         - 
-          AttributeName: serialNumber
+          AttributeName: sensorName
           KeyType: "HASH"
+      AttributeDefinitions:
+        - 
+          AttributeName: "sensorName"
+          AttributeType: "S"
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 50
+        WriteCapacityUnits: 50
+
+  SensorDataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-sensorData"
+      KeySchema:
+        - 
+          AttributeName: sensorName
+          KeyType: "HASH"
+        - AttributeName: timestamp
+          KeyType: "RANGE"
+      AttributeDefinitions:
+        - 
+          AttributeName: "sensorName"
+          AttributeType: "S"
+        - AttributeName: "timestamp"
+          AttributeType: "N"
       ProvisionedThroughput: 
         ReadCapacityUnits: 50
         WriteCapacityUnits: 50
@@ -219,7 +239,9 @@ Resources:
         Statement:
         - Effect: Allow
           Action: dynamodb:*
-          Resource: !GetAtt DynamodbTable.Arn
+          Resource: 
+          - !GetAtt SensorLocationTable.Arn
+          - !GetAtt SensorDataTable.Arn
       Roles:
         - !Ref DAXRole
         - !Ref ECSTaskRole
@@ -449,8 +471,10 @@ Resources:
             Value: !Ref DBPass
           - Name: DB_DB
             Value: "employees"
-          - Name: DYNAMODB_TABLE
-            Value: !Sub "${AWS::StackName}-DynamoTable"
+          - Name: SENSORLOCATION_TABLE
+            Value: !Sub "${AWS::StackName}-sensorLocation"
+          - Name: SENSORDATA_TABLE
+            Value: !Sub "${AWS::StackName}-sensorData"
           - Name: CACHE_HOST
             Value: { "Fn::GetAtt": ["CacheCluster","RedisEndpoint.Address"]}
           - Name: DAX_HOST

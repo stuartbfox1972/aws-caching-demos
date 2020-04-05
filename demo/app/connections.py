@@ -1,16 +1,17 @@
 from flask import Response
 
 import boto3
+import botocore.session
 import json
 import mysql.connector as mysql
 import os
 import redis
 
-def _elasticache_connect():
+def _elasticache_connect(db):
     try:
         r = redis.Redis(host=os.environ['CACHE_HOST'],
                         port=6379,
-                        db=0)
+                        db=db)
         return r
     except redis.RedisError:
         payload=json.dumps({"Response": "Error Connecting to " + os.environ['CACHE_HOST']}, indent=1)
@@ -29,12 +30,28 @@ def _rds_connect():
         print("Something went wrong: {}".format(e))
 
 
-def _dax_connect():
-    return
-
-
 def _dynamodb_connect():
-    return
+    region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+    if 'DYNAMODB_ENDPOINT' in os.environ:
+        dynamo_client = boto3.resource('dynamodb',
+                                  region_name=region,
+                                  endpoint_url=os.environ['DYNAMODB_ENDPOINT'])
+        #dynamo_client = session.create_client('dynamodb',
+        #                                       region_name=region,
+        #                                       endpoint_url=os.environ['DYNAMODB_ENDPOINT'])
+        dax_client = boto3.resource('dynamodb',
+                                  region_name=region,
+                                  endpoint_url=os.environ['DYNAMODB_ENDPOINT'])
+        #dax_client = session.create_client('dynamodb',
+        #                                    region_name=region,
+        #                                    endpoint_url=os.environ['DYNAMODB_ENDPOINT'])
+    else:
+        endpoint_url, endpoint_port = os.environ.get('DAX_HOST').split(':')
+        dynamo_client = session.create_client('dynamodb',
+                                               region_name=region)
+        dax_client = amazondax.AmazonDaxClient(session, region_name=region, endpoints=endpoint_url)
+    
+    return (dynamo_client, dax_client)
 
 
 def _s3_connect():

@@ -1,4 +1,5 @@
 from app.connections import _elasticache_connect, _s3_connect
+from app.elasticache import _elasticache_flush
 from datetime import datetime
 from hurry.filesize import size
 
@@ -11,6 +12,7 @@ import string
 import sys
 
 BATCH=500
+KEYSPACE=1
 
 def _s3_prepare():
     s3, bucket = _s3_connect()
@@ -31,7 +33,7 @@ def _s3_prepare():
 
 
 def _s3_query():
-    r = _elasticache_connect()
+    r = _elasticache_connect(KEYSPACE)
     s3, bucket = _s3_connect()
     f = random.randint(0, BATCH)
     fname = 'dummy' + str(f)
@@ -68,6 +70,19 @@ def _s3_query():
 
 def _s3_compare():
     return "Compare"
+
+
+def _s3_flush():
+    start = datetime.now()
+    _elasticache_flush(KEYSPACE)
+    stop = datetime.now()
+    diff = (stop-start).total_seconds()
+
+    payload = json.dumps({"Response": "Keys successfully deleted from Elasticache",
+                          "Keyspace": KEYSPACE,
+                          "Duration": str(diff),
+                          "Measurement": "Seconds"}, indent=1)
+    return payload
 
 def _s3_clean():
     counter = 0

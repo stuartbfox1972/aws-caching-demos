@@ -11,10 +11,10 @@
     <section id="tabs" align="left">
       <h1 class="section-title h1">AWS Caching Demos</h1>
       <div style="width: 100%; overflow: hidden;">
-        <div class="welcome" style="text-align:left width: 60%; float: left;">
+        <div class="welcome" style="text-align:left width: 30%; float: left;">
           Welcome
         </div>
-        <div style="margin-left: 80%;">
+        <div style="margin-left: 70%;">
           <textarea id="responseID" readonly rows=7 cols=100 style="border: none">Results will appear here</textarea>
         </div>
       </div>
@@ -31,7 +31,7 @@
                 <br>
                 <ul>
                   <li><b>Run Query</b></li>
-                  Use this button to execute your SQL query. It uses the <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/Strategies.html#Strategies.LazyLoading">Lazy Loading technique</a> to check the existance of a result set in Elasticache first before querying the database.
+                  Use this button to execute your SQL query. It uses the <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/Strategies.html#Strategies.LazyLoading" target="_new">Lazy Loading technique</a> to check the existance of a result set in Elasticache first before querying the database.
                   If there is no result set, the database is queried and the result set is entered into Elasticache. Construct your query and press the button several times to see the difference.
                   <li><b>Compare</b></li>
                   Use this button to calculate the percentage decrease in application latency.
@@ -52,7 +52,7 @@
                   <input type="text" id="queryString" value="SHOW TABLES"><br>
                   <button onclick="runRDSQuery()">Run Query</button>
                   <button onclick="runRDSCompare()">Compare</button>
-                  <button onclick="flushCache()">Clear Cache</button>
+                  <button onclick="rdsFlushCache()">Clear Cache</button>
                   </div>
               </div>
               <div style="margin-left: 620px;">
@@ -84,7 +84,7 @@
                 <button onclick="runS3Prepare()">Prepare S3</button>
                 <button onclick="runS3Query()">Run Query</button>
                 <button onclick="runS3Clean()">Clean S3</button>
-                <button onclick="flushCache()">Clear Cache</button>
+                <button onclick="s3FlushCache()">Clear Cache</button>
               </div>
             </div>    
           </div>

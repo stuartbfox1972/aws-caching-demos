@@ -1,7 +1,7 @@
 from app import app
-from app.elasticache import _elasticache_flush
-from app.rds import _rds_compare, _rds_query
-from app.s3 import _s3_prepare, _s3_clean, _s3_query
+from app.rds import _rds_compare, _rds_query, _rds_flush
+from app.s3 import _s3_prepare, _s3_clean, _s3_query, _s3_flush
+from app.ddb import _ddb_query
 from flask import render_template, Response
 
 
@@ -18,9 +18,9 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/api/v1.0/elasticache/flush', methods=['GET'])
-def elasticache_flush():
-    payload = _elasticache_flush()
+@app.route('/api/v1.0/rds/flush', methods=['GET'])
+def rds_flush():
+    payload = _rds_flush()
     return Response(payload, mimetype='application/json')
 
 
@@ -57,4 +57,16 @@ def s3_query():
 @app.route('/api/v1.0/s3/compare')
 def s3_compare():
     payload = _s3_compare()
+    return Response(payload, mimetype='application/json')
+
+
+@app.route('/api/v1.0/s3/flush', methods=['GET'])
+def s3_flush():
+    payload = _s3_flush()
+    return Response(payload, mimetype='application/json')
+
+
+@app.route('/api/v1.0/ddb/query', methods=['POST'])
+def ddb_query():
+    payload = _ddb_query()
     return Response(payload, mimetype='application/json')
