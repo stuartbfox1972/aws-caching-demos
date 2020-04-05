@@ -1,5 +1,6 @@
 from flask import Response
 
+import amazondax
 import boto3
 import botocore.session
 import json

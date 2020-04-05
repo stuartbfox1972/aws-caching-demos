@@ -3,12 +3,7 @@ from app.elasticache import _elasticache_flush
 from boto3.dynamodb.conditions import Key, Attr
 from datetime import datetime
 from flask import Response, request
-from hurry.filesize import size
 
-
-import amazondax
-import boto3
-import botocore.session
 import json
 import pprint
 import sys
