@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from amazondax import AmazonDaxClient
 from decimal import *
 
 import boto3
