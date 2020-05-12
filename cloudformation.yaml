@@ -114,6 +114,17 @@ Resources:
       - arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole
       Path: "/"
 
+  DatabaseRotationSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: 'This is the secret for my RDS instance'
+      Name: !Sub "/${AWS::StackName}/rds/connection_string"
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username": "${DBUser}"}'
+        GenerateStringKey: 'password'
+        PasswordLength: 16
+        ExcludeCharacters: '"@/\'
+
   DatabaseSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -477,6 +488,12 @@ Resources:
             Value: { "Fn::GetAtt": ["DAXCluster", "ClusterDiscoveryEndpoint"] }
           - Name: S3_BUCKET
             Value: !Ref S3Bucket
+          - Name: STACK_NAME
+            Value: !Sub "${AWS::StackName}"
+          - Name: REGION
+            Value: "${AWS::Region}"
+          - NAME: SECRET_MANAGER_PATH
+            Value: !Sub "/${AWS::StackName}/rds/connection_string"
 
   ECSService:
     Type: 'AWS::ECS::Service'
