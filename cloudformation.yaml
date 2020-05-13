@@ -205,7 +205,6 @@ Resources:
     Properties:
       AutoMinorVersionUpgrade: true
       CacheNodeType: !Ref CacheInstanceType
-      ClusterName: !Sub "${AWS::StackName}-CacheCluster"
       Engine: redis
       EngineVersion: 5.0.6
       NumCacheNodes: 1
@@ -214,6 +213,10 @@ Resources:
         - !Ref CacheSecurityGroup
       CacheSubnetGroupName:
         Ref: CacheSubnetGroup
+        Tags: 
+          - 
+            Key: "ClusterName"
+            Value: !Sub "${AWS::StackName}-CacheCluster"
 
   SensorLocationTable:
     Type: AWS::DynamoDB::Table
@@ -332,13 +335,16 @@ Resources:
     Type: AWS::DAX::Cluster
     Properties:
       Description: "DAX Cluster"
-      ClusterName: !Sub "${AWS::StackName}-DaxCluster"
       IAMRoleARN: !GetAtt DAXRole.Arn
       NodeType: !Ref DAXInstanceType
       ReplicationFactor: 1
       SecurityGroupIds:
         - !GetAtt DAXSecurityGroup.GroupId
       SubnetGroupName: !Ref DAXSubnetGroup
+      Tags: 
+        - 
+          Key: "ClusterName"
+          Value: !Sub "${AWS::StackName}-DaxCluster"
   
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
