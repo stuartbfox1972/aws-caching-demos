@@ -213,10 +213,8 @@ Resources:
         - !Ref CacheSecurityGroup
       CacheSubnetGroupName:
         Ref: CacheSubnetGroup
-        Tags: 
-          - 
-            Key: "ClusterName"
-            Value: !Sub "${AWS::StackName}-CacheCluster"
+      Tags: 
+          ClusterName: !Sub "${AWS::StackName}-CacheCluster"
 
   SensorLocationTable:
     Type: AWS::DynamoDB::Table
@@ -342,9 +340,7 @@ Resources:
         - !GetAtt DAXSecurityGroup.GroupId
       SubnetGroupName: !Ref DAXSubnetGroup
       Tags: 
-        - 
-          Key: "ClusterName"
-          Value: !Sub "${AWS::StackName}-DaxCluster"
+        ClusterName: !Sub "${AWS::StackName}-DaxCluster"
   
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup

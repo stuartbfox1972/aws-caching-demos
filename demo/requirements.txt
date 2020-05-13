@@ -1,6 +1,5 @@
 amazon-dax-client
 aws-xray-sdk
-awscli
 boto3
 botocore
 datetime
@@ -9,4 +8,3 @@ hurry.filesize
 mysql-connector
 redis
 requests
-subprocess
