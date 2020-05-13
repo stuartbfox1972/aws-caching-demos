@@ -11,11 +11,13 @@ import redis
 
 def get_secret():
 
-    if 'DB_USER' in os.environ:
+    if 'DB_HOST' in os.environ:
         db_user = os.environ['DB_USER']
         db_pass = os.environ['DB_PASS']
+        db_host = os.environ['DB_HOST']
+        db_name = 'employees'
     else:
-        secret_path = os.environ["SECRET_MANAGER_PATH"]
+        secret_path = os.environ["SECRETS_MANAGER_PATH"]
         region_name = os.environ["REGION"]
 
         # Create a Secrets Manager client
@@ -52,13 +54,13 @@ def get_secret():
                 raise e
         else:
             secret = json.loads(get_secret_value_response['SecretString'])
-            
             db_user = secret['username']
             db_pass = secret['password']
-               
-        return (db_user, db_pass)
+            db_host = secret['host']
+            db_name = secret['dbname']     
+        return (db_user, db_pass, db_host, db_name)
 
-print(get_secret())
+
 def _elasticache_connect(db):
     try:
         r = redis.Redis(host=os.environ['CACHE_HOST'],
@@ -72,11 +74,11 @@ def _elasticache_connect(db):
             
 def _rds_connect():
     try:
-        dbuser, dbpass = get_secret()
-        db = mysql.connect(host      = os.environ['DB_HOST'],
-                            user     = dbuser,
-                            passwd   = dbpass,
-                            database = 'employees')
+        dbuser, dbpass, dbhost, dbname = get_secret()
+        db = mysql.connect(host     = dbhost,
+                           user     = dbuser,
+                           passwd   = dbpass,
+                           database = dbname)
 
         return db
     except mysql.Error as e:

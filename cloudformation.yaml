@@ -20,8 +20,6 @@ Metadata:
       - Label:
           default: "RDS Configuration"
         Parameters:
-          - DBUser
-          - DBPass
           - DBInstanceType
       - Label:
           default: "ElastiCache Configuration"
@@ -50,23 +48,14 @@ Parameters:
     Default: db.t2.medium
     Description: "RDS MySQL Instance types, i.e. db.t2.micro, db.t2.small, db.m3.medium, db.m4.xlarge, etc"
     AllowedValues:
-      - db.t2.micro
       - db.t2.small
       - db.t2.medium
-      - db.t2.large
-      - db.m5.large
+      - db.r5.large
   DBUser:
     Type: String
     Default: "demodb"
     Description: "Database Username"
     AllowedPattern: "[a-zA-Z0-9]*"
-  DBPass:
-    Type: String
-    Description: "Database Password, between 8-41 characters"
-    NoEcho: true
-    AllowedPattern: "[a-zA-Z0-9]*"
-    MinLength: 8
-    MaxLength: 41
   PrivSubnet1:
     Type: AWS::EC2::Subnet::Id
     Description: "Private Subnet Id where nodes instance will be placed"
@@ -125,6 +114,27 @@ Resources:
         PasswordLength: 16
         ExcludeCharacters: '"@/\'
 
+  SecretRDSInstanceAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref DatabaseRotationSecret
+      TargetId: !Ref DatabaseInstance
+      TargetType: AWS::RDS::DBInstance
+
+  SecretsManagerAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${AWS::StackName}-SMAccess"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action: secretsmanager:GetSecretValue
+          Resource: 
+          - !Ref DatabaseRotationSecret
+      Roles:
+        - !Ref ECSTaskRole
+
   DatabaseSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -152,21 +162,21 @@ Resources:
     Properties:
       DBName: employees
       DBInstanceIdentifier: !Sub "${AWS::StackName}-RDSInstance"
-      AllocatedStorage: 100
+      DBInstanceClass: !Ref DBInstanceType
+      AllocatedStorage: 500
       StorageType: io1
       Iops: 2000
-      DBInstanceClass: !Ref DBInstanceType
       Engine: mysql
       EngineVersion: 8.0.16
-      MasterUsername: !Ref DBUser
-      MasterUserPassword: !Ref DBPass
+      MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseRotationSecret, ':SecretString:username}}' ]]
+      MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseRotationSecret, ':SecretString:password}}' ]]
       MonitoringRoleArn: !GetAtt ['EnhancedMonitoringRole', 'Arn']
       MonitoringInterval: 60
       VPCSecurityGroups:
          - !GetAtt DatabaseSecurityGroup.GroupId
       DBSubnetGroupName:
         Ref: DatabaseSubnetGroup
-      MultiAZ: false
+      MultiAZ: true
 
   CacheSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -217,9 +227,10 @@ Resources:
         - 
           AttributeName: "sensorName"
           AttributeType: "S"
-      ProvisionedThroughput: 
-        ReadCapacityUnits: 50
-        WriteCapacityUnits: 50
+      BillingMode: PAY_PER_REQUEST
+      #ProvisionedThroughput: 
+      #  ReadCapacityUnits: 50
+      #  WriteCapacityUnits: 50
 
   SensorDataTable:
     Type: AWS::DynamoDB::Table
@@ -237,9 +248,10 @@ Resources:
           AttributeType: "S"
         - AttributeName: "timestamp"
           AttributeType: "N"
-      ProvisionedThroughput: 
-        ReadCapacityUnits: 50
-        WriteCapacityUnits: 50
+      BillingMode: PAY_PER_REQUEST
+      #ProvisionedThroughput: 
+        #ReadCapacityUnits: 50
+        #WriteCapacityUnits: 50
 
   DynamodbTableAccessPolicy:
     Type: AWS::IAM::Policy
@@ -405,12 +417,6 @@ Resources:
       LogGroupName: !Sub "${AWS::StackName}-LogGroup"
       RetentionInDays: 365
 
-  #ECRepository:
-  #  Type: AWS::ECR::Repository
-  #  DeletionPolicy: Retain
-  #  Properties: 
-  #    RepositoryName: "aws-caching"
-
   ECSTaskRole:
     Type: AWS::IAM::Role
     Properties:
@@ -472,10 +478,6 @@ Resources:
         Environment:
           - Name: DB_HOST
             Value: { "Fn::GetAtt": ["DatabaseInstance","Endpoint.Address"]}
-          - Name: DB_USER
-            Value: !Ref DBUser
-          - Name: DB_PASS
-            Value: !Ref DBPass
           - Name: DB_DB
             Value: "employees"
           - Name: SENSORLOCATION_TABLE
@@ -491,8 +493,8 @@ Resources:
           - Name: STACK_NAME
             Value: !Sub "${AWS::StackName}"
           - Name: REGION
-            Value: "${AWS::Region}"
-          - NAME: SECRET_MANAGER_PATH
+            Value: !Sub "${AWS::Region}"
+          - Name: SECRET_MANAGER_PATH
             Value: !Sub "/${AWS::StackName}/rds/connection_string"
 
   ECSService:
