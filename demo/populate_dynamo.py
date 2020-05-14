@@ -50,9 +50,14 @@ if 'Item' not in item:
 
     dt = datetime.datetime(2016, 2, 25, 23, 23)
     startTime=(round(time.mktime(dt.timetuple())))
-    
+    stamps = [startTime]
+    for record in range(0, RECORDS):
+        startTime += 10
+        stamps.append(startTime)
+
     for i in range(1, SENSORS):
         sensor = 'sensor' + str(i)
+        sTime = startTime
         print(sensor)
         lat,lon = _gen_lat_lng()
         sensorLocation.put_item(
@@ -63,12 +68,8 @@ if 'Item' not in item:
             }
         )
         with sensorData.batch_writer() as batchData:
-            for p in range(0, RECORDS):
-                T-=1
-                if 'DYNAMODB_ENDPOINT' in os.environ:
-                    print(T)
-                startTime += 10
-                item = {'sensorName': sensor, 'timestamp': startTime, 'datapoint': random.randint(20,90)}
+            for stamp in stamps:
+                item = {'sensorName': sensor, 'timestamp': stamp, 'datapoint': random.randint(20,90)}
                 batchData.put_item(Item=item)
 else:
     print("DynamoDB Table Already Populated with test data")

@@ -16,7 +16,7 @@ KEYSPACE=0
 def _rds_query():
     r = _elasticache_connect(KEYSPACE)
     content = request.get_json(silent=True)
-    key = 'RDS:' + os.environ['DB_DB'] + ':' + content['Query']
+    key = 'RDS:' + ' + content['Query']
     query = content['Query']
     hex_dig = hashlib.sha256(key.encode('utf-8')).hexdigest()
 
