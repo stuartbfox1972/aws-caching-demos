@@ -215,9 +215,6 @@ Resources:
         - !Ref CacheSecurityGroup
       CacheSubnetGroupName:
         Ref: CacheSubnetGroup
-      #Tags: 
-      #- Key: InstanceName
-      #  Value: !Sub "${AWS::StackName}-CacheInstance"
 
   SensorLocationTable:
     Type: AWS::DynamoDB::Table
@@ -232,9 +229,6 @@ Resources:
           AttributeName: "sensorName"
           AttributeType: "S"
       BillingMode: PAY_PER_REQUEST
-      #ProvisionedThroughput: 
-      #  ReadCapacityUnits: 50
-      #  WriteCapacityUnits: 50
 
   SensorDataTable:
     Type: AWS::DynamoDB::Table
@@ -253,9 +247,6 @@ Resources:
         - AttributeName: "timestamp"
           AttributeType: "N"
       BillingMode: PAY_PER_REQUEST
-      #ProvisionedThroughput: 
-        #ReadCapacityUnits: 50
-        #WriteCapacityUnits: 50
 
   DynamodbTableAccessPolicy:
     Type: AWS::IAM::Policy
@@ -328,7 +319,6 @@ Resources:
           Action:
             - dax:*
           Resource:
-          #  - !Sub arn:aws:dax:${AWS::Region}:${AWS::AccountId}:cache/${AWS::StackName}-daxcluster
             - !GetAtt DAXCluster.Arn
       Roles:
         - !Ref ECSTaskRole
@@ -343,9 +333,6 @@ Resources:
       SecurityGroupIds:
         - !GetAtt DAXSecurityGroup.GroupId
       SubnetGroupName: !Ref DAXSubnetGroup
-      #Tags: 
-      #- Key: InstanceName
-      #  Value: !Sub "${AWS::StackName}-DAXCluster"
   
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup

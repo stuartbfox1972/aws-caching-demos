@@ -86,7 +86,7 @@ def check_if_popluated():
 
 def executeSqlScript(dbuser, dbpass, dbhost, dbname, ignoreErrors=False):
     sourceCmd = "SOURCE %s" % ('employees.sql',)
-    cmdList = [ "/usr/bin/mysql",
+    cmdList = [ "mysql",
                 "-h", dbhost,
                 "-u", dbuser,
                 "-p" + dbpass,
