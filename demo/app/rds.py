@@ -34,11 +34,13 @@ def _rds_query():
         db = _rds_connect()
         cursor = db.cursor()
         start = datetime.now()
+        print("Running " + query + " at " + str(start))
         cursor.execute(query)
         data = cursor.fetchall()
         p_data = pickle.dumps(data)
         r.set(hex_dig, p_data, ex=900)
         stop = datetime.now()
+        print("Finished " + query + " at " + str(stop))
         diff = (stop-start).total_seconds()
         payload = json.dumps({"Response": "CACHE MISS",
                               "Duration": str(diff),
