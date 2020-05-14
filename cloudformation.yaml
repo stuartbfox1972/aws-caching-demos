@@ -161,7 +161,6 @@ Resources:
     Type: AWS::RDS::DBInstance
     Properties:
       DBName: employees
-      DBInstanceIdentifier: !Sub "${AWS::StackName}-RDSInstance"
       DBInstanceClass: !Ref DBInstanceType
       AllocatedStorage: 500
       StorageType: io1
@@ -177,6 +176,9 @@ Resources:
       DBSubnetGroupName:
         Ref: DatabaseSubnetGroup
       MultiAZ: true
+      #Tags: 
+      #- Key: InstanceName
+      #  Value: !Sub "${AWS::StackName}-RDSInstance"
 
   CacheSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -213,8 +215,9 @@ Resources:
         - !Ref CacheSecurityGroup
       CacheSubnetGroupName:
         Ref: CacheSubnetGroup
-      Tags: 
-          ClusterName: !Sub "${AWS::StackName}-CacheCluster"
+      #Tags: 
+      #- Key: InstanceName
+      #  Value: !Sub "${AWS::StackName}-CacheInstance"
 
   SensorLocationTable:
     Type: AWS::DynamoDB::Table
@@ -325,7 +328,8 @@ Resources:
           Action:
             - dax:*
           Resource:
-            - !Sub arn:aws:dax:${AWS::Region}:${AWS::AccountId}:cache/${AWS::StackName}-daxcluster
+          #  - !Sub arn:aws:dax:${AWS::Region}:${AWS::AccountId}:cache/${AWS::StackName}-daxcluster
+            - !GetAtt DAXCluster.Arn
       Roles:
         - !Ref ECSTaskRole
   
@@ -339,8 +343,9 @@ Resources:
       SecurityGroupIds:
         - !GetAtt DAXSecurityGroup.GroupId
       SubnetGroupName: !Ref DAXSubnetGroup
-      Tags: 
-        ClusterName: !Sub "${AWS::StackName}-DaxCluster"
+      #Tags: 
+      #- Key: InstanceName
+      #  Value: !Sub "${AWS::StackName}-DAXCluster"
   
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -478,10 +483,6 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: !Sub "${AWS::StackName}-LogStream"
         Environment:
-          - Name: DB_HOST
-            Value: { "Fn::GetAtt": ["DatabaseInstance","Endpoint.Address"]}
-          - Name: DB_DB
-            Value: "employees"
           - Name: SENSORLOCATION_TABLE
             Value: !Sub "${AWS::StackName}-sensorLocation"
           - Name: SENSORDATA_TABLE
@@ -496,7 +497,7 @@ Resources:
             Value: !Sub "${AWS::StackName}"
           - Name: REGION
             Value: !Sub "${AWS::Region}"
-          - Name: SECRET_MANAGER_PATH
+          - Name: SECRETS_MANAGER_PATH
             Value: !Sub "/${AWS::StackName}/rds/connection_string"
 
   ECSService:

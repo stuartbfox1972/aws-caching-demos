@@ -18,18 +18,8 @@ WESTERNMOST  = -124.
 SENSORS      = 500
 RECORDS      = 10000
 T            = SENSORS*RECORDS
-
-# For testing against local
-if 'DYNAMODB_ENDPOINT' in os.environ:
-    store = boto3.resource('dynamodb', endpoint_url=os.environ['DYNAMODB_ENDPOINT'])
-    SENSORS = SENSORS/100
-    RECORDS = RECORDS/100
-else:
-    region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
-    endpoint_url, endpoint_port = os.environ.get('DAX_HOST').split(':')
-    store = AmazonDaxClient.resource(region_name=region,
-                                     endpoint_url=endpoint_url)
-
+                    
+store = boto3.resource('dynamodb', endpoint_url=os.environ['DYNAMODB_ENDPOINT'])
 sensorLocation = store.Table(os.environ['SENSORLOCATION_TABLE'])
 sensorData = store.Table(os.environ['SENSORDATA_TABLE'])
 
