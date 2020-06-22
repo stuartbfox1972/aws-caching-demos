@@ -69,6 +69,7 @@ def get_secret():
 
 def check_if_popluated():
     dbuser, dbpass, dbhost, dbname = get_secret()
+    print("Checking Aurora")
     db = mysql.connect( host     = dbhost,
                         user     = dbuser,
                         passwd   = dbpass,

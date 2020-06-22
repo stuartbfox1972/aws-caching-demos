@@ -164,30 +164,11 @@ Resources:
       - Ref: PrivSubnet1
       - Ref: PrivSubnet2
 
-  # DatabaseInstance:
-  #   Type: AWS::RDS::DBInstance
-  #   Properties:
-  #     DBName: employees
-  #     DBInstanceClass: !Ref DBInstanceType
-  #     AllocatedStorage: 500
-  #     StorageType: io1
-  #     Iops: 2000
-  #     Engine: mysql
-  #     EngineVersion: 8.0.16
-  #     MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseRotationSecret, ':SecretString:username}}' ]]
-  #     MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseRotationSecret, ':SecretString:password}}' ]]
-  #     MonitoringRoleArn: !GetAtt ['EnhancedMonitoringRole', 'Arn']
-  #     MonitoringInterval: 60
-  #     VPCSecurityGroups:
-  #        - !GetAtt DatabaseSecurityGroup.GroupId
-  #     DBSubnetGroupName:
-  #       Ref: DatabaseSubnetGroup
-  #     MultiAZ: true
-
   DatabaseCluster:
     DependsOn: DatabaseSubnetGroup
     Type: "AWS::RDS::DBCluster"
     Properties: 
+      DatabaseName: employees
       DBClusterParameterGroupName: 
         Ref: DatabaseClusterParameterGroup
       DBSubnetGroupName:
@@ -205,13 +186,8 @@ Resources:
         time_zone: US/Pacific
 
   DatabaseInstance1:
-    Type: "AWS::RDS::DBInstance" 
+    Type: "AWS::RDS::DBInstance"
     Properties: 
-      # AvailabilityZone: 
-      #   ? "Fn::GetAtt"
-      #   : 
-      #     - !Ref PrivSubnet1
-      #     - AvailabilityZone
       DBClusterIdentifier: 
         Ref: DatabaseCluster
       DBInstanceClass: !Ref DBInstanceType
