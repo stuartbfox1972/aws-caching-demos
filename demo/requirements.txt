@@ -4,7 +4,9 @@ boto3
 botocore
 datetime
 flask
+gunicorn
 hurry.filesize
 mysql-connector
 redis
+redis-py-cluster
 requests

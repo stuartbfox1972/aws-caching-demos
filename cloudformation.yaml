@@ -114,11 +114,18 @@ Resources:
         PasswordLength: 16
         ExcludeCharacters: '"@/\'
 
-  SecretRDSInstanceAttachment:
+  SecretRDSInstanceAttachment1:
     Type: AWS::SecretsManager::SecretTargetAttachment
     Properties:
       SecretId: !Ref DatabaseRotationSecret
-      TargetId: !Ref DatabaseInstance
+      TargetId: !Ref DatabaseInstance1
+      TargetType: AWS::RDS::DBInstance
+
+  SecretRDSInstanceAttachment2:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref DatabaseRotationSecret
+      TargetId: !Ref DatabaseInstance2
       TargetType: AWS::RDS::DBInstance
 
   SecretsManagerAccessPolicy:
@@ -151,34 +158,90 @@ Resources:
   DatabaseSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupDescription: RDS DB Subnet Group
-      DBSubnetGroupName: !Sub "${AWS::StackName}-RDSubnetgroup"
+      DBSubnetGroupDescription: "Aurora Subnet Group"
+      DBSubnetGroupName: !Sub "${AWS::StackName}-rdsubnetgroup"
       SubnetIds:
       - Ref: PrivSubnet1
       - Ref: PrivSubnet2
 
-  DatabaseInstance:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      DBName: employees
-      DBInstanceClass: !Ref DBInstanceType
-      AllocatedStorage: 500
-      StorageType: io1
-      Iops: 2000
-      Engine: mysql
-      EngineVersion: 8.0.16
-      MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseRotationSecret, ':SecretString:username}}' ]]
-      MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseRotationSecret, ':SecretString:password}}' ]]
-      MonitoringRoleArn: !GetAtt ['EnhancedMonitoringRole', 'Arn']
-      MonitoringInterval: 60
-      VPCSecurityGroups:
-         - !GetAtt DatabaseSecurityGroup.GroupId
+  # DatabaseInstance:
+  #   Type: AWS::RDS::DBInstance
+  #   Properties:
+  #     DBName: employees
+  #     DBInstanceClass: !Ref DBInstanceType
+  #     AllocatedStorage: 500
+  #     StorageType: io1
+  #     Iops: 2000
+  #     Engine: mysql
+  #     EngineVersion: 8.0.16
+  #     MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseRotationSecret, ':SecretString:username}}' ]]
+  #     MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseRotationSecret, ':SecretString:password}}' ]]
+  #     MonitoringRoleArn: !GetAtt ['EnhancedMonitoringRole', 'Arn']
+  #     MonitoringInterval: 60
+  #     VPCSecurityGroups:
+  #        - !GetAtt DatabaseSecurityGroup.GroupId
+  #     DBSubnetGroupName:
+  #       Ref: DatabaseSubnetGroup
+  #     MultiAZ: true
+
+  DatabaseCluster:
+    DependsOn: DatabaseSubnetGroup
+    Type: "AWS::RDS::DBCluster"
+    Properties: 
+      DBClusterParameterGroupName: 
+        Ref: DatabaseClusterParameterGroup
       DBSubnetGroupName:
         Ref: DatabaseSubnetGroup
-      MultiAZ: true
-      #Tags: 
-      #- Key: InstanceName
-      #  Value: !Sub "${AWS::StackName}-RDSInstance"
+      Engine: aurora
+      MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseRotationSecret, ':SecretString:username}}' ]]
+      MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseRotationSecret, ':SecretString:password}}' ]]
+  
+  DatabaseClusterParameterGroup:
+    Type: "AWS::RDS::DBClusterParameterGroup"
+    Properties:
+      Description: "DatabaseClusterParameterGroup"
+      Family: aurora5.6
+      Parameters: 
+        time_zone: US/Pacific
+
+  DatabaseInstance1:
+    Type: "AWS::RDS::DBInstance" 
+    Properties: 
+      # AvailabilityZone: 
+      #   ? "Fn::GetAtt"
+      #   : 
+      #     - !Ref PrivSubnet1
+      #     - AvailabilityZone
+      DBClusterIdentifier: 
+        Ref: DatabaseCluster
+      DBInstanceClass: !Ref DBInstanceType
+      DBParameterGroupName: 
+        Ref: DatabaseParameterGroup
+      DBSubnetGroupName: 
+        Ref: DatabaseSubnetGroup
+      Engine: aurora
+      PubliclyAccessible: "false"
+      
+  DatabaseInstance2:
+    Type: "AWS::RDS::DBInstance" 
+    Properties: 
+      DBClusterIdentifier: 
+        Ref: DatabaseCluster
+      DBInstanceClass: !Ref DBInstanceType
+      DBParameterGroupName: 
+        Ref: DatabaseParameterGroup
+      DBSubnetGroupName: 
+        Ref: DatabaseSubnetGroup
+      Engine: aurora
+      PubliclyAccessible: "false"
+
+  DatabaseParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties: 
+      Description: "CloudFormation Sample Aurora Parameter Group"
+      Family: aurora5.6
+      Parameters: 
+        sql_mode: IGNORE_SPACE
 
   CacheSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -203,18 +266,20 @@ Resources:
       - Ref: PrivSubnet2
 
   CacheCluster:
-    Type: AWS::ElastiCache::CacheCluster
+    Type: AWS::ElastiCache::ReplicationGroup
     Properties:
+      AutomaticFailoverEnabled: true
       AutoMinorVersionUpgrade: true
       CacheNodeType: !Ref CacheInstanceType
+      CacheSubnetGroupName: !Ref CacheSubnetGroup
       Engine: redis
-      EngineVersion: 5.0.6
-      NumCacheNodes: 1
+      EngineVersion: '5.0.6'
+      NumNodeGroups: '4'
+      ReplicasPerNodeGroup: '1'
       Port: 6379
-      VpcSecurityGroupIds:
-        - !Ref CacheSecurityGroup
-      CacheSubnetGroupName:
-        Ref: CacheSubnetGroup
+      ReplicationGroupDescription: A sample replication group
+      SecurityGroupIds:
+      - !Ref CacheSecurityGroup 
 
   SensorLocationTable:
     Type: AWS::DynamoDB::Table
@@ -329,7 +394,8 @@ Resources:
       Description: "DAX Cluster"
       IAMRoleARN: !GetAtt DAXRole.Arn
       NodeType: !Ref DAXInstanceType
-      ReplicationFactor: 1
+      ReplicationFactor: 2
+      ParameterGroupName: !Ref DAXParamGroup
       SecurityGroupIds:
         - !GetAtt DAXSecurityGroup.GroupId
       SubnetGroupName: !Ref DAXSubnetGroup
@@ -475,7 +541,7 @@ Resources:
           - Name: SENSORDATA_TABLE
             Value: !Sub "${AWS::StackName}-sensorData"
           - Name: CACHE_HOST
-            Value: { "Fn::GetAtt": ["CacheCluster","RedisEndpoint.Address"]}
+            Value: { "Fn::GetAtt": ["CacheCluster","ConfigurationEndPoint.Address"]}
           - Name: DAX_HOST
             Value: { "Fn::GetAtt": ["DAXCluster", "ClusterDiscoveryEndpoint"] }
           - Name: S3_BUCKET
@@ -516,6 +582,7 @@ Resources:
         
   S3Bucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
   
   S3BucketAccessPolicy:
     Type: AWS::IAM::Policy
