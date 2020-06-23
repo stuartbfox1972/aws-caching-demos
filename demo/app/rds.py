@@ -20,6 +20,7 @@ def _rds_query():
     hex_dig = hashlib.sha256(key.encode('utf-8')).hexdigest()
 
     if r.exists(hex_dig):
+        print("Cache hit for " + query)
         start = datetime.now()
         data = pickle.loads(r.get(hex_dig))
         stop = datetime.now()
