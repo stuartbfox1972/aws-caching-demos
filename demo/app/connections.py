@@ -51,7 +51,7 @@ def get_secret():
         return (db_user, db_pass, db_host, db_name)
 
 
-def _elasticache_connect(db):
+def _elasticache_connect():
     try:
         startup_nodes = [{"host": os.environ['CACHE_HOST'],
                           "port": "6379"}]
