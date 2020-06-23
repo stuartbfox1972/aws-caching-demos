@@ -6,8 +6,8 @@ import json
 import os
 
 
-def _elasticache_flush(space):
-    r = _elasticache_connect(space)
+def _elasticache_flush():
+    r = _elasticache_connect()
     start = datetime.now()
     r.flushdb()
     stop = datetime.now()
