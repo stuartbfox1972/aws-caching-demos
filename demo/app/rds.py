@@ -52,7 +52,7 @@ def _rds_query():
     
 def _rds_compare():
     ## Flush cache
-    _elasticache_flush(KEYSPACE)
+    _elasticache_flush()
     ## Run initial query and populate cache
     q1_res = json.loads(_rds_query())
     q1_time = float(q1_res['Duration'])
@@ -88,12 +88,11 @@ def _rds_compare():
 
 def _rds_flush():
     start = datetime.now()
-    _elasticache_flush(KEYSPACE)
+    _elasticache_flush()
     stop = datetime.now()
     diff = (stop-start).total_seconds()
 
     payload = json.dumps({"Response": "Keys successfully deleted from Elasticache",
-                          "Keyspace": KEYSPACE,
                           "Duration": str(diff),
                           "Measurement": "Seconds"}, indent=1)
     return payload

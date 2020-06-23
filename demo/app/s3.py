@@ -73,12 +73,11 @@ def _s3_compare():
 
 def _s3_flush():
     start = datetime.now()
-    _elasticache_flush(KEYSPACE)
+    _elasticache_flush()
     stop = datetime.now()
     diff = (stop-start).total_seconds()
 
     payload = json.dumps({"Response": "Keys successfully deleted from Elasticache",
-                          "Keyspace": KEYSPACE,
                           "Duration": str(diff),
                           "Measurement": "Seconds"}, indent=1)
     return payload
