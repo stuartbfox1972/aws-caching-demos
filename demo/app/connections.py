@@ -55,7 +55,7 @@ def _elasticache_connect():
     try:
         startup_nodes = [{"host": os.environ['CACHE_HOST'],
                           "port": "6379"}]
-        r = RedisCluster(decode_responses=True,
+        r = RedisCluster(decode_responses=False,
                          startup_nodes=startup_nodes,
                          skip_full_coverage_check=True)
         return r
