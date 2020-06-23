@@ -1,12 +1,13 @@
 from amazondax import AmazonDaxClient
 from flask import Response
+from rediscluster import RedisCluster
 
 import boto3
 import botocore.session
 import json
 import mysql.connector as mysql
 import os
-import redis
+#import redis
 
 
 def get_secret():
@@ -62,10 +63,20 @@ def get_secret():
 
 
 def _elasticache_connect(db):
+    #try:
+    #    r = redis.Redis(host=os.environ['CACHE_HOST'],
+    #                    port=6379,
+    #                    db=db)
+    #    return r
+    #except redis.RedisError:
+    #    payload=json.dumps({"Response": "Error Connecting to " + os.environ['CACHE_HOST']}, indent=1)
+    #    return Response(payload, mimetype='application/json')
     try:
-        r = redis.Redis(host=os.environ['CACHE_HOST'],
-                        port=6379,
-                        db=db)
+        startup_nodes = [{"host": os.environ['CACHE_HOST'],
+                          "port": "6379"}]
+        r = RedisCluster(db=db,
+                         decode_responses=True,
+                         startup_nodes=startup_nodes)
         return r
     except redis.RedisError:
         payload=json.dumps({"Response": "Error Connecting to " + os.environ['CACHE_HOST']}, indent=1)

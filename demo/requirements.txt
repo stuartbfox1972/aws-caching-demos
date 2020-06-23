@@ -7,6 +7,6 @@ flask
 gunicorn
 hurry.filesize
 mysql-connector
-redis
+#redis
 redis-py-cluster
 requests

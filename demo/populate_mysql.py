@@ -69,6 +69,7 @@ def get_secret():
 
 def check_if_popluated():
     dbuser, dbpass, dbhost, dbname = get_secret()
+    print(dbuser, dbpass, dbhost, dbname)
     print("Checking Aurora")
     db = mysql.connect( host     = dbhost,
                         user     = dbuser,
@@ -77,6 +78,7 @@ def check_if_popluated():
 
     cursor = db.cursor()
     try:
+        print("Trying Aurora")
         cursor.execute('select count(1) from titles')
         print("Database already populated, exiting")
     except:

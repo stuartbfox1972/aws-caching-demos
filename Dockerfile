@@ -9,12 +9,10 @@ RUN \
   rm daemon.zip cfg.yaml && \
   pip install --no-compile --no-cache-dir -r /src/requirements.txt && \
   chmod +x /src/boot.sh && \
-  apk add --no-cache libc6-compat mysql-client && \
+  #apk add --no-cache libc6-compat mysql-client && \
   adduser -D flask && \
   chown -R flask:flask /src/*
 
-#ENV FLASK_APP demo.py
-#ENV FLASK_DEBUG 1
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED TRUE
 

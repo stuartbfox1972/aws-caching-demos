@@ -118,15 +118,15 @@ Resources:
     Type: AWS::SecretsManager::SecretTargetAttachment
     Properties:
       SecretId: !Ref DatabaseRotationSecret
-      TargetId: !Ref DatabaseInstance1
-      TargetType: AWS::RDS::DBInstance
+      TargetId: !Ref DatabaseCluster
+      TargetType: AWS::RDS::DBCluster
 
-  SecretRDSInstanceAttachment2:
-    Type: AWS::SecretsManager::SecretTargetAttachment
-    Properties:
-      SecretId: !Ref DatabaseRotationSecret
-      TargetId: !Ref DatabaseInstance2
-      TargetType: AWS::RDS::DBInstance
+  #SecretRDSInstanceAttachment2:
+  #  Type: AWS::SecretsManager::SecretTargetAttachment
+  #  Properties:
+  #    SecretId: !Ref DatabaseRotationSecret
+  #    TargetId: !Ref DatabaseInstance2
+  #    TargetType: AWS::RDS::DBInstance
 
   SecretsManagerAccessPolicy:
     Type: AWS::IAM::Policy
@@ -164,26 +164,40 @@ Resources:
       - Ref: PrivSubnet1
       - Ref: PrivSubnet2
 
+  #DatabaseClusterParameterGroup:
+  #  Type: "AWS::RDS::DBClusterParameterGroup"
+  #  Properties:
+  #    Description: "DatabaseClusterParameterGroup"
+  #    Family: aurora-mysql
+  #    Parameters: 
+  #      time_zone: US/Pacific
+  
+  #DatabaseParameterGroup:
+  #  Type: AWS::RDS::DBParameterGroup
+  #  Properties: 
+  #    Description: "DatabaseParameterGroup"
+  #    Family: aurora-mysql5.7
+  #    Parameters: 
+  #      sql_mode: IGNORE_SPACE
+
   DatabaseCluster:
     DependsOn: DatabaseSubnetGroup
     Type: "AWS::RDS::DBCluster"
     Properties: 
       DatabaseName: employees
-      DBClusterParameterGroupName: 
-        Ref: DatabaseClusterParameterGroup
+      VpcSecurityGroupIds:
+        - !Ref DatabaseSecurityGroup
+      DBClusterParameterGroupName: default.aurora-mysql5.7
       DBSubnetGroupName:
         Ref: DatabaseSubnetGroup
-      Engine: aurora
+      Engine: aurora-mysql
       MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseRotationSecret, ':SecretString:username}}' ]]
       MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseRotationSecret, ':SecretString:password}}' ]]
-  
-  DatabaseClusterParameterGroup:
-    Type: "AWS::RDS::DBClusterParameterGroup"
-    Properties:
-      Description: "DatabaseClusterParameterGroup"
-      Family: aurora5.6
-      Parameters: 
-        time_zone: US/Pacific
+      EnableCloudwatchLogsExports: 
+        - "error"
+        - "general"
+        - "slowquery"
+        - "audit"
 
   DatabaseInstance1:
     Type: "AWS::RDS::DBInstance"
@@ -191,11 +205,11 @@ Resources:
       DBClusterIdentifier: 
         Ref: DatabaseCluster
       DBInstanceClass: !Ref DBInstanceType
-      DBParameterGroupName: 
-        Ref: DatabaseParameterGroup
+      #DBParameterGroupName: 
+      #  Ref: DatabaseParameterGroup
       DBSubnetGroupName: 
         Ref: DatabaseSubnetGroup
-      Engine: aurora
+      Engine: aurora-mysql
       PubliclyAccessible: "false"
       
   DatabaseInstance2:
@@ -204,20 +218,12 @@ Resources:
       DBClusterIdentifier: 
         Ref: DatabaseCluster
       DBInstanceClass: !Ref DBInstanceType
-      DBParameterGroupName: 
-        Ref: DatabaseParameterGroup
+      #DBParameterGroupName: 
+      #  Ref: DatabaseParameterGroup
       DBSubnetGroupName: 
         Ref: DatabaseSubnetGroup
-      Engine: aurora
+      Engine: aurora-mysql
       PubliclyAccessible: "false"
-
-  DatabaseParameterGroup:
-    Type: AWS::RDS::DBParameterGroup
-    Properties: 
-      Description: "CloudFormation Sample Aurora Parameter Group"
-      Family: aurora5.6
-      Parameters: 
-        sql_mode: IGNORE_SPACE
 
   CacheSecurityGroup:
     Type: AWS::EC2::SecurityGroup
