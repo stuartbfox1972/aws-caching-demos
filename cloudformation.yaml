@@ -379,6 +379,9 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Name: !Sub "${AWS::StackName}-ALB"
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: 300
       Scheme: internet-facing
       Subnets: 
         - !Ref PubSubnet1
