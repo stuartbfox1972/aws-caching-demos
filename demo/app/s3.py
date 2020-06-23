@@ -12,7 +12,6 @@ import string
 import sys
 
 BATCH=500
-KEYSPACE=1
 
 def _s3_prepare():
     s3, bucket = _s3_connect()
@@ -33,7 +32,7 @@ def _s3_prepare():
 
 
 def _s3_query():
-    r = _elasticache_connect(KEYSPACE)
+    r = _elasticache_connect()
     s3, bucket = _s3_connect()
     f = random.randint(0, BATCH)
     fname = 'dummy' + str(f)

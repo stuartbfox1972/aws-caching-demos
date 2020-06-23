@@ -7,7 +7,6 @@ import botocore.session
 import json
 import mysql.connector as mysql
 import os
-#import redis
 
 
 def get_secret():
@@ -34,24 +33,14 @@ def get_secret():
             )
         except ClientError as e:
             if e.response['Error']['Code'] == 'DecryptionFailureException':
-                # Secrets Manager can't decrypt the protected secret text using the provided KMS key.
-                # Deal with the exception here, and/or rethrow at your discretion.
                 raise e
             elif e.response['Error']['Code'] == 'InternalServiceErrorException':
-                # An error occurred on the server side.
-                # Deal with the exception here, and/or rethrow at your discretion.
                 raise e
             elif e.response['Error']['Code'] == 'InvalidParameterException':
-                # You provided an invalid value for a parameter.
-                # Deal with the exception here, and/or rethrow at your discretion.
                 raise e
             elif e.response['Error']['Code'] == 'InvalidRequestException':
-                # You provided a parameter value that is not valid for the current state of the resource.
-                # Deal with the exception here, and/or rethrow at your discretion.
                 raise e
             elif e.response['Error']['Code'] == 'ResourceNotFoundException':
-                # We can't find the resource that you asked for.
-                # Deal with the exception here, and/or rethrow at your discretion.
                 raise e
         else:
             secret = json.loads(get_secret_value_response['SecretString'])
@@ -63,19 +52,10 @@ def get_secret():
 
 
 def _elasticache_connect(db):
-    #try:
-    #    r = redis.Redis(host=os.environ['CACHE_HOST'],
-    #                    port=6379,
-    #                    db=db)
-    #    return r
-    #except redis.RedisError:
-    #    payload=json.dumps({"Response": "Error Connecting to " + os.environ['CACHE_HOST']}, indent=1)
-    #    return Response(payload, mimetype='application/json')
     try:
         startup_nodes = [{"host": os.environ['CACHE_HOST'],
                           "port": "6379"}]
-        r = RedisCluster(db=db,
-                         decode_responses=True,
+        r = RedisCluster(decode_responses=True,
                          startup_nodes=startup_nodes)
         return r
     except redis.RedisError:

@@ -4,7 +4,6 @@ from hurry.filesize import size
 
 import json
 import os
-import redis
 
 
 def _elasticache_flush(space):

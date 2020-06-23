@@ -11,10 +11,9 @@ import pickle
 import sys
 import time
 
-KEYSPACE=0
 
 def _rds_query():
-    r = _elasticache_connect(KEYSPACE)
+    r = _elasticache_connect()
     content = request.get_json(silent=True)
     key = 'RDS:' + content['Query']
     query = content['Query']

@@ -164,22 +164,6 @@ Resources:
       - Ref: PrivSubnet1
       - Ref: PrivSubnet2
 
-  #DatabaseClusterParameterGroup:
-  #  Type: "AWS::RDS::DBClusterParameterGroup"
-  #  Properties:
-  #    Description: "DatabaseClusterParameterGroup"
-  #    Family: aurora-mysql
-  #    Parameters: 
-  #      time_zone: US/Pacific
-  
-  #DatabaseParameterGroup:
-  #  Type: AWS::RDS::DBParameterGroup
-  #  Properties: 
-  #    Description: "DatabaseParameterGroup"
-  #    Family: aurora-mysql5.7
-  #    Parameters: 
-  #      sql_mode: IGNORE_SPACE
-
   DatabaseCluster:
     DependsOn: DatabaseSubnetGroup
     Type: "AWS::RDS::DBCluster"
@@ -205,8 +189,6 @@ Resources:
       DBClusterIdentifier: 
         Ref: DatabaseCluster
       DBInstanceClass: !Ref DBInstanceType
-      #DBParameterGroupName: 
-      #  Ref: DatabaseParameterGroup
       DBSubnetGroupName: 
         Ref: DatabaseSubnetGroup
       Engine: aurora-mysql
@@ -218,8 +200,6 @@ Resources:
       DBClusterIdentifier: 
         Ref: DatabaseCluster
       DBInstanceClass: !Ref DBInstanceType
-      #DBParameterGroupName: 
-      #  Ref: DatabaseParameterGroup
       DBSubnetGroupName: 
         Ref: DatabaseSubnetGroup
       Engine: aurora-mysql
