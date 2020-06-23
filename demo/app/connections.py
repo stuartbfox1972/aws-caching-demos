@@ -56,7 +56,8 @@ def _elasticache_connect():
         startup_nodes = [{"host": os.environ['CACHE_HOST'],
                           "port": "6379"}]
         r = RedisCluster(decode_responses=True,
-                         startup_nodes=startup_nodes)
+                         startup_nodes=startup_nodes,
+                         skip_full_coverage_check=True)
         return r
     except redis.RedisError:
         payload=json.dumps({"Response": "Error Connecting to " + os.environ['CACHE_HOST']}, indent=1)
