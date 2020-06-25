@@ -41,7 +41,7 @@ def _ddb_query():
         payload = json.dumps({"DAX Time": str(dax_diff),
                               "DynamoDB Time": str(ddb_diff),
                               "Measurement": "Seconds",
-                              "Percentage Change": str(diff)},
+                              "Percentage Change": diff},
                               indent=1)
 
         return payload
@@ -80,7 +80,7 @@ def _ddb_query():
                               "DAX Time": str(dax_diff),
                               "DAX Items" : str(daxcount),
                               "Measurement": "Seconds",
-                              "Percentage Increase": str(diff)},
+                              "Percentage Increase": diff},
                               indent=1)
 
         return payload

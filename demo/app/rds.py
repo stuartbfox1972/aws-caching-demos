@@ -75,7 +75,8 @@ def _rds_compare():
 
     avg_time =  (q2_time + q3_time + q4_time + q5_time + q6_time) / 5
 
-    diff = ("%.2f" % ((q1_time/avg_time)*100) )
+    diff = _percentage_change(q1_time,avg_time)
+    #diff = ("%.2f" % ((q1_time/avg_time)*100) )
     miss = ("%.4f" % float(q1_res['Duration']))
     hit = ("%.4f" % float(avg_time))
 
@@ -83,7 +84,7 @@ def _rds_compare():
                           "AVG HIT Query Time": hit,
                           "Measurement": "Seconds",
                           "Payload Size": q1_res['Payload Size'],
-                          "Percentage Increase": str(diff) +"%"
+                          "Percentage Increase": diff
                         }, indent=1)
     return payload
 
