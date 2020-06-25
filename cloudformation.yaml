@@ -37,11 +37,17 @@ Metadata:
       - Label:
           default: "Route53 Hosted Zone"
         Parameters:
+          - UseHostedZone
           - WebsiteName
           - DomainName
           - HostedZone
 
 Parameters:
+  UseHostedZone:
+    Type: String
+    AllowedValues:
+      - Yes
+      - No
   HostedZone:
     Type: AWS::Route53::HostedZone::Id
     Description: Route53 Hosted Zone to alias the ALB into
@@ -101,8 +107,8 @@ Parameters:
     Description: "Public Subnet Id where the ALB will be placed"
 
 Conditions:
-  EmptyHostedZone:
-    !Not [!Equals [!Ref HostedZone, ""]]
+  UseHostedZone:
+    !Equals [Yes, !Ref UseHostedZone]
 
 Resources:
   EnhancedMonitoringRole:
@@ -176,6 +182,7 @@ Resources:
 
   DatabaseCluster:
     DependsOn: DatabaseSubnetGroup
+    DeletionPolicy: Delete
     Type: "AWS::RDS::DBCluster"
     Properties: 
       DatabaseName: employees
@@ -363,6 +370,13 @@ Resources:
         - !GetAtt DAXSecurityGroup.GroupId
       SubnetGroupName: !Ref DAXSubnetGroup
   
+  ALBCertificate:
+    Condition: UseHostedZone
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Sub '${WebsiteName}.${DomainName}'
+      ValidationMethod: DNS
+
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -373,6 +387,10 @@ Resources:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
           CidrIp: 0.0.0.0/0
  
   LoadBalancer:
@@ -389,12 +407,25 @@ Resources:
       SecurityGroups:
         - !Ref ALBSecurityGroup
     
-  LoadBalancerListener:
+  LoadBalancerListener80:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref 'LoadBalancer'
       Port: 80
       Protocol: HTTP
+      DefaultActions:
+        - TargetGroupArn: !Ref 'DefaultTargetGroup'
+          Type: 'forward'
+
+  LoadBalancerListener443:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: UseHostedZone
+    Properties:
+      LoadBalancerArn: !Ref 'LoadBalancer'
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref ALBCertificate
       DefaultActions:
         - TargetGroupArn: !Ref 'DefaultTargetGroup'
           Type: 'forward'
@@ -423,10 +454,24 @@ Resources:
       HealthyThresholdCount: 2
       TargetType: ip
 
-  ListenerRule:
+  ListenerRule80:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
-      ListenerArn: !Ref LoadBalancerListener
+      ListenerArn: !Ref LoadBalancerListener80
+      Priority: 1
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /*
+      Actions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+      
+  ListenerRule443:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: UseHostedZone
+    Properties:
+      ListenerArn: !Ref LoadBalancerListener443
       Priority: 1
       Conditions:
         - Field: path-pattern
@@ -438,7 +483,7 @@ Resources:
 
   DNSRecord:
     Type: AWS::Route53::RecordSet
-    Condition: EmptyHostedZone
+    Condition: UseHostedZone
     Properties:
       HostedZoneId: !Ref HostedZone
       Name: !Join [".", [!Ref WebsiteName, !Ref DomainName]]
@@ -532,7 +577,7 @@ Resources:
   ECSService:
     Type: 'AWS::ECS::Service'
     DependsOn:
-      - LoadBalancerListener
+      - LoadBalancerListener80
     Properties:
       Cluster: !GetAtt ['ECSCluster', 'Arn']
       ServiceName: !Sub "${AWS::StackName}-ECSService"
@@ -583,6 +628,6 @@ Outputs:
     Description: The URL of the ALB
     Value: !Sub 'http://${LoadBalancer.DNSName}'
   R53Url:
-    Condition: EmptyHostedZone
+    Condition: UseHostedZone
     Description: The URL of the Hosted Zone
-    Value: !Sub 'http://${WebsiteName}.${DomainName}'
+    Value: !Sub 'https://${WebsiteName}.${DomainName}'

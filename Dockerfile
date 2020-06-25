@@ -5,7 +5,9 @@ WORKDIR /src/
 ADD demo /src/
 RUN \
   wget -O daemon.zip https://s3.dualstack.us-east-2.amazonaws.com/aws-xray-assets.us-east-2/xray-daemon/aws-xray-daemon-linux-3.x.zip && \
-  unzip daemon.zip && mv xray /usr/bin/xray && \
+  unzip daemon.zip && \
+  mv -v xray /usr/bin/xray && \
+  ls -lh /usr/bin/xray && \
   rm daemon.zip cfg.yaml && \
   pip install --no-compile --no-cache-dir -r /src/requirements.txt && \
   chmod +x /src/boot.sh && \
