@@ -1,5 +1,6 @@
 from app.connections import _dynamodb_connect
 from app.elasticache import _elasticache_flush
+from app.functions import _percentage_change
 from boto3.dynamodb.conditions import Key, Attr
 from datetime import datetime
 from flask import Response, request
@@ -36,11 +37,11 @@ def _ddb_query():
         dax_stop = datetime.now()
         dax_diff = (dax_stop-dax_start).total_seconds()
 
-        diff = ("%.2f" % ((ddb_diff/dax_diff)*100) )
+        diff = _percentage_change(ddb_diff,dax_diff)
         payload = json.dumps({"DAX Time": str(dax_diff),
                               "DynamoDB Time": str(ddb_diff),
                               "Measurement": "Seconds",
-                              "Percentage Increase": str(diff) +"%"},
+                              "Percentage Change": str(diff)},
                               indent=1)
 
         return payload
@@ -73,13 +74,13 @@ def _ddb_query():
         dax_stop = datetime.now()
         dax_diff = (dax_stop-dax_start).total_seconds()
 
-        diff = ("%.2f" % ((dax_diff/ddb_diff)*100) )
+        diff = _percentage_change(ddb_diff,dax_diff)
         payload = json.dumps({"DynamoDB Time": str(ddb_diff),
                               "DynamoDB Items" : str(ddbcount),
                               "DAX Time": str(dax_diff),
                               "DAX Items" : str(daxcount),
                               "Measurement": "Seconds",
-                              "Percentage Increase": str(diff) +"%"},
+                              "Percentage Increase": str(diff)},
                               indent=1)
 
         return payload
