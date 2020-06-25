@@ -1,4 +1,4 @@
-var apiBase = "http://"+location.hostname+"/api/v1.0";
+var apiBase = "https://"+location.hostname+"/api/v1.0";
 
 function rdsFlushCache() { 
     const xhr = new XMLHttpRequest(),
