@@ -1,5 +1,6 @@
 from app.connections import _rds_connect, _elasticache_connect
 from app.elasticache import _elasticache_flush
+from app.functions import _percentage_change
 from datetime import datetime
 from flask import Response, request
 from hurry.filesize import size
