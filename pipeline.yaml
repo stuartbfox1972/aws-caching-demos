@@ -1,0 +1,307 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "**WARNING** You will be billed for the AWS resources used if you create a stack from this template"
+
+Metadata:
+  About:
+    Description: "AWS Caching Demos - Deployment Pipeline"
+  Author:
+    Description: "Stuart Fox"
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Github Config"
+        Parameters:
+        - GitHubRepo
+        - GitHubBranch
+        - GitHubUser
+        - GitHubToken
+      - Label:
+          default: "Network Config"
+        Parameters:
+          - Vpc
+          - PrivSubnet1
+          - PrivSubnet2
+          - PubSubnet1
+          - PubSubnet2
+      - Label:
+          default: "Aurora Config"
+        Parameters:
+        - DBInstanceType
+        - DBUser
+      - Label:
+          default: "ElastiCache (Redis) Configuration"
+        Parameters:
+          - CacheInstanceType
+
+Parameters:
+  GitHubRepo:
+    Type: String
+  GitHubBranch:
+    Type: String
+  GitHubToken:
+    Type: String
+    NoEcho: true
+  GitHubUser:
+    Type: String
+  Vpc:
+    Type: AWS::EC2::VPC::Id
+    Description: "VPC where cache and database instances will be placed"
+  PrivSubnet1:
+    Type: AWS::EC2::Subnet::Id
+    Description: "Private Subnet Id where nodes instance will be placed"
+  PrivSubnet2:
+    Type: AWS::EC2::Subnet::Id
+    Description: "Private Subnet Id where nodes instance will be placed"
+  PubSubnet1:
+    Type: AWS::EC2::Subnet::Id
+    Description: "Public Subnet Id where the ALB will be placed"
+  PubSubnet2:
+    Type: AWS::EC2::Subnet::Id
+    Description: "Public Subnet Id where the ALB will be placed"
+  DBInstanceType:
+    Type: String
+    Default: db.t3.medium
+    Description: "RDS MySQL Instance types, i.e. db.t2.micro, db.t2.small, db.m3.medium, db.m4.xlarge, etc"
+    AllowedValues:
+      - db.t3.small
+      - db.t3.medium
+      - db.r5.large
+      - db.r5.xlarge
+  DBUser:
+    Type: String
+    Default: "demodb"
+    Description: "Database Username"
+    AllowedPattern: "[a-zA-Z0-9]*"
+  CacheInstanceType:
+    Type: String
+    Default: cache.t3.medium
+    Description: "ElastiCache Instance types, i.e. cache.t2.small, cache.m3.large, etc"
+    AllowedValues:
+      - cache.t3.micro
+      - cache.t3.small
+      - cache.t3.medium
+      - cache.r5.large
+
+Resources:
+  Repository:
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
+
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - ecr:GetAuthorizationToken
+              - Resource: !Sub arn:aws:s3:::${ArtifactBucket}/*
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:GetObjectVersion
+              - Resource: !Sub arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${Repository}
+                Effect: Allow
+                Action:
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - ecs:DescribeServices
+                  - ecs:DescribeTaskDefinition
+                  - ecs:DescribeTasks
+                  - ecs:ListTasks
+                  - ecs:RegisterTaskDefinition
+                  - ecs:UpdateService
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                  - iam:PassRole
+
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - $(aws ecr get-login --no-include-email)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+            build:
+              commands:
+                - docker build --tag "$IMAGE_URI" .
+            post_build:
+              commands:
+                - docker push "$IMAGE_URI"
+                - printf '[{"name":"simple-app","imageUri":"%s"}]' "$IMAGE_URI" > images.json
+          artifacts:
+            files: images.json
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/docker:17.09.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+      Name: !Ref AWS::StackName
+      ServiceRole: !Ref CodeBuildServiceRole
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: App
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubUser
+                Repo: !Ref GitHubRepo
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: App
+              RunOrder: 0
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: App
+              OutputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+        - Name: Deploy Infra
+          Actions:
+            - Name: Deploy Infra
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              Configuration:
+                StackName: !Ref AWS::StackName-infra
+                Capabilities:
+                  - CAPABILITY_IAM
+                  - CAPABILITY_NAMED_IAM
+                ActionMode: REPLACE_ON_FAILURE
+                TemplatePath: "App::infra.yaml"
+                ParameterOverrides: >
+                  '{
+                    "UseHostedZone": !Ref HostedZone,
+                    "HostedZone": !Ref HostedZone,
+                    "WebsiteName": !Ref WebsiteName,
+                    "DomainName": !Ref DomainName,
+                    "Vpc": !Ref Vpc,
+                    "DBInstanceType": !Ref DBInstanceType,
+                    "DBUser": !Ref DBUser,
+                    "PrivSubnet1": !Ref PrivSubnet1,
+                    "PrivSubnet2": !Ref PrivSubnet2,
+                    "PubSubnet1": !Ref PubSubnet1,
+                    "PubSubnet2": !Ref PubSubnet2,
+                    "CacheInstanceType": !Ref CacheInstanceType,
+                    "DAXInstanceType": !Ref DAXInstanceType,
+                    "MinContainers": !Ref MinContainers,
+                    "MaxContainers": !Ref MaxContainers,
+                    "AutoScalingTargetValue": !Ref AutoScalingTargetValue,
+                    }'
+              InputArtifacts:
+                - Name: App
+              OutputArtifacts:
+                - Name: []
+              RunOrder: 2
+        # - Name: Deploy ECS
+        #   Actions:
+        #     - Name: Deploy
+        #       ActionTypeId:
+        #         Category: Deploy
+        #         Owner: AWS
+        #         Version: 1
+        #         Provider: ECS
+        #       Configuration:
+        #         ClusterName: !Ref Cluster
+        #         ServiceName: !Ref Service
+        #         FileName: images.json
+        #       InputArtifacts:
+        #         - Name: BuildOutput
+        #       RunOrder: 1
+
+  
+Outputs:
+  PipelineUrl:
+    Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}

@@ -1,0 +1,100 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "**WARNING** You will be billed for the AWS resources used if you create a stack from this template"
+
+Metadata:
+  About:
+    Description: "AWS Caching Demos - ECS"
+  Author:
+    Description: "Stuart Fox"
+
+Parameters:
+  CloudWatchLogsGroup:
+    Type: String
+  DockerImage:
+    Type: String
+  DeploymentName:
+    Type: String
+  ECSTaskRole:
+    Type: String
+  ECSTaskExecutionRole:
+    Type: String
+  PrivSubnet1:
+    Type: String
+  PrivSubnet2:
+    Type: String
+  TargetGroup:
+    Type: String
+
+Resources:
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${DeploymentName}-ECSCluster"
+  
+  ECSTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      ExecutionRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
+      TaskRoleArn: { "Fn::GetAtt": ["ECSTaskRole", "Arn"] }
+      RequiresCompatibilities:
+        - "FARGATE"
+      Family: !Sub "${DeploymentName}-TaskDef"
+      NetworkMode: "awsvpc"
+      Cpu: 512
+      Memory: 1GB
+      ContainerDefinitions:
+      - Name: !Sub "${DeploymentName}-ContainerDef"
+        Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${DockerImage}:latest"
+        PortMappings:
+        - ContainerPort: 5000
+          Protocol: tcp
+        EntryPoint: 
+          - "/src/boot.sh"
+        LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CloudWatchLogsGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Sub "${DeploymentName}-LogStream"
+        Environment:
+          - Name: SENSORLOCATION_TABLE
+            Value: !Sub "${DeploymentName}-sensorLocation"
+          - Name: SENSORDATA_TABLE
+            Value: !Sub "${DeploymentName}-sensorData"
+          - Name: CACHE_HOST
+            Value: { "Fn::GetAtt": ["CacheCluster","ConfigurationEndPoint.Address"]}
+          - Name: DAX_HOST
+            Value: { "Fn::GetAtt": ["DAXCluster", "ClusterDiscoveryEndpoint"] }
+          - Name: S3_BUCKET
+            Value: !Ref S3Bucket
+          - Name: STACK_NAME
+            Value: !Sub "${DeploymentName}"
+          - Name: REGION
+            Value: !Sub "${AWS::Region}"
+          - Name: SECRETS_MANAGER_PATH
+            Value: !Sub "/${DeploymentName}/rds/connection_string"
+
+  ECSService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster: !GetAtt ['ECSCluster', 'Arn']
+      ServiceName: !Sub "${DeploymentName}-ECSService"
+      LaunchType: FARGATE
+      TaskDefinition: !Ref ECSTaskDefinition
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      HealthCheckGracePeriodSeconds: 10
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - !Ref ECSSecurityGroup
+          Subnets:
+            - !Ref PrivSubnet1
+            - !Ref PrivSubnet2
+      LoadBalancers:
+      - ContainerName: !Sub "${DeploymentName}-ContainerDef"
+        ContainerPort: 5000
+        TargetGroupArn: !Ref TargetGroup
