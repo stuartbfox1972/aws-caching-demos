@@ -51,7 +51,7 @@ Parameters:
     Description: "Private Subnet Id where nodes instance will be placed"
   CacheInstanceType:
     Type: String
-    Default: cache.t2.medium
+    Default: cache.t3.medium
     Description: "ElastiCache Instance types, i.e. cache.t2.small, cache.m3.large, etc"
     AllowedValues:
       - cache.t3.micro
