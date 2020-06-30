@@ -27,14 +27,31 @@ Metadata:
           - PubSubnet1
           - PubSubnet2
       - Label:
+          default: "Route53 Hosted Zone"
+        Parameters:
+          - UseHostedZone
+          - WebsiteName
+          - DomainName
+          - HostedZone
+      - Label:
           default: "Aurora Config"
         Parameters:
         - DBInstanceType
         - DBUser
       - Label:
+          default: "DAX Configuration"
+        Parameters:
+          - DAXInstanceType
+      - Label:
           default: "ElastiCache (Redis) Configuration"
         Parameters:
           - CacheInstanceType
+      - Label:
+          default: "Fargate Autoscaling Parameters"
+        Parameters:
+          - MinContainers
+          - MaxContainers
+          - AutoScalingTargetValue
 
 Parameters:
   GitHubRepo:
@@ -61,6 +78,23 @@ Parameters:
   PubSubnet2:
     Type: AWS::EC2::Subnet::Id
     Description: "Public Subnet Id where the ALB will be placed"
+  UseHostedZone:
+    Type: String
+    AllowedValues:
+      - Yes
+      - No
+  HostedZone:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Route53 Hosted Zone to alias the ALB into
+  WebsiteName:
+    Type: String
+    Default: "cache-demo"
+    Description: "Hostname"
+    AllowedPattern: "[a-zA-Z0-9\\-]*"
+  DomainName:
+    Type: String
+    Description: "Domain Name - Nasty requirement to type in the HostedZone domain (sorry)"
+    AllowedPattern: "[a-zA-Z0-9\\-\\.]*"
   DBInstanceType:
     Type: String
     Default: db.t3.medium
@@ -75,6 +109,14 @@ Parameters:
     Default: "demodb"
     Description: "Database Username"
     AllowedPattern: "[a-zA-Z0-9]*"
+  DAXInstanceType:
+    Type: String
+    Default: dax.t2.medium
+    Description: "DAX Instance types"
+    AllowedValues:
+      - dax.t2.small
+      - dax.t2.medium
+      - dax.r4.large
   CacheInstanceType:
     Type: String
     Default: cache.t3.medium
@@ -84,12 +126,41 @@ Parameters:
       - cache.t3.small
       - cache.t3.medium
       - cache.r5.large
+  MinContainers:
+    Type: Number
+    Default: 1
+  MaxContainers:
+    Type: Number
+    Default: 20
+  AutoScalingTargetValue:
+    Type: Number
+    Default: 25
 
 Resources:
   Repository:
     Type: AWS::ECR::Repository
     DeletionPolicy: Retain
 
+  CloudFormationServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action: "*"
+        
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -165,6 +236,16 @@ Resources:
                   - ecs:UpdateService
                   - codebuild:StartBuild
                   - codebuild:BatchGetBuilds
+                  - cloudformation:CreateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeStacks
+                  - cloudformation:UpdateStack
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:SetStackPolicy
+                  - cloudformation:ValidateTemplate
                   - iam:PassRole
 
   ArtifactBucket:
@@ -254,39 +335,36 @@ Resources:
                 Owner: AWS
                 Provider: CloudFormation
                 Version: "1"
-              RunOrder: 2
+              RunOrder: 3
               InputArtifacts:
                 - Name: App
               OutputArtifacts:
                 - Name: InfraDeployOutput
               Configuration:
-                StackName: !Sub "${AWS::StackName}-infra"
-                Capabilities: CAPABILITY_IAM, CAPABILITY_NAMED_IAM
                 ActionMode: REPLACE_ON_FAILURE
+                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
+                RoleArn: !GetAtt CloudFormationServiceRole.Arn
+                StackName: !Sub "${AWS::StackName}-infra"
                 TemplatePath: "App::infra.yaml"
-                ParameterOverrides: > 
-                  '{
-                    "UseHostedZone": !Ref HostedZone,
-                    "HostedZone": !Ref HostedZone,
-                    "WebsiteName": !Ref WebsiteName,
-                    "DomainName": !Ref DomainName,
-                    "Vpc": !Ref Vpc,
-                    "DBInstanceType": !Ref DBInstanceType,
-                    "DBUser": !Ref DBUser,
-                    "PrivSubnet1": !Ref PrivSubnet1,
-                    "PrivSubnet2": !Ref PrivSubnet2,
-                    "PubSubnet1": !Ref PubSubnet1,
-                    "PubSubnet2": !Ref PubSubnet2,
-                    "CacheInstanceType": !Ref CacheInstanceType,
-                    "DAXInstanceType": !Ref DAXInstanceType,
-                    "MinContainers": !Ref MinContainers,
-                    "MaxContainers": !Ref MaxContainers,
-                    "AutoScalingTargetValue": !Ref AutoScalingTargetValue
-                  }'
-        #      InputArtifacts:
-        #        - Name: App
-        #      OutputArtifacts:
-        #        - Name: InfraDeployOutput
+                ParameterOverrides: !Sub |
+                  {
+                    "UseHostedZone": "${UseHostedZone}",
+                    "HostedZone": "${HostedZone}",
+                    "WebsiteName": "${WebsiteName}",
+                    "DomainName": "${DomainName}",
+                    "Vpc": "${Vpc}",
+                    "DBInstanceType": "${DBInstanceType}",
+                    "DBUser": "${DBUser}",
+                    "PrivSubnet1": "${PrivSubnet1}",
+                    "PrivSubnet2": "${PrivSubnet2}",
+                    "PubSubnet1": "${PubSubnet1}",
+                    "PubSubnet2": "${PubSubnet2}",
+                    "CacheInstanceType": "${CacheInstanceType}",
+                    "DAXInstanceType": "${DAXInstanceType}",
+                    "MinContainers": "${MinContainers}",
+                    "MaxContainers": "${MaxContainers}",
+                    "AutoScalingTargetValue": "${AutoScalingTargetValue}"
+                  }
         #      RunOrder: 2
         # - Name: Deploy ECS
         #   Actions:

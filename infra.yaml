@@ -10,7 +10,7 @@ Metadata:
     Description: "Stuart Fox"
 
 Parameters:
-UseHostedZone:
+  UseHostedZone:
     Type: String
     AllowedValues:
       - Yes
