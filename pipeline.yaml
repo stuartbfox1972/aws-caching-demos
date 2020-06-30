@@ -230,7 +230,7 @@ Resources:
                 OAuthToken: !Ref GitHubToken
               OutputArtifacts:
                 - Name: App
-              RunOrder: 0
+              RunOrder: 1
         - Name: Build
           Actions:
             - Name: Build
@@ -245,23 +245,26 @@ Resources:
                 - Name: App
               OutputArtifacts:
                 - Name: BuildOutput
-              RunOrder: 1
-        - Name: Deploy Infra
+              RunOrder: 2
+        - Name: DeployInfra
           Actions:
-            - Name: Deploy Infra
+            - Name: DeployInfra
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
                 Provider: CloudFormation
                 Version: "1"
+              RunOrder: 2
+              InputArtifacts:
+                - Name: App
+              OutputArtifacts:
+                - Name: InfraDeployOutput
               Configuration:
-                StackName: !Ref AWS::StackName-infra
-                Capabilities:
-                  - CAPABILITY_IAM
-                  - CAPABILITY_NAMED_IAM
+                StackName: !Sub "${AWS::StackName}-infra"
+                Capabilities: CAPABILITY_IAM, CAPABILITY_NAMED_IAM
                 ActionMode: REPLACE_ON_FAILURE
                 TemplatePath: "App::infra.yaml"
-                ParameterOverrides: >
+                ParameterOverrides: > 
                   '{
                     "UseHostedZone": !Ref HostedZone,
                     "HostedZone": !Ref HostedZone,
@@ -279,12 +282,12 @@ Resources:
                     "MinContainers": !Ref MinContainers,
                     "MaxContainers": !Ref MaxContainers,
                     "AutoScalingTargetValue": !Ref AutoScalingTargetValue
-                    }'
-              InputArtifacts:
-                - Name: App
-              OutputArtifacts:
-                - Name: []
-              RunOrder: 2
+                  }'
+        #      InputArtifacts:
+        #        - Name: App
+        #      OutputArtifacts:
+        #        - Name: InfraDeployOutput
+        #      RunOrder: 2
         # - Name: Deploy ECS
         #   Actions:
         #     - Name: Deploy
