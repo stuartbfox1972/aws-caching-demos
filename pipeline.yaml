@@ -278,7 +278,7 @@ Resources:
                     "DAXInstanceType": !Ref DAXInstanceType,
                     "MinContainers": !Ref MinContainers,
                     "MaxContainers": !Ref MaxContainers,
-                    "AutoScalingTargetValue": !Ref AutoScalingTargetValue,
+                    "AutoScalingTargetValue": !Ref AutoScalingTargetValue
                     }'
               InputArtifacts:
                 - Name: App
