@@ -38,7 +38,6 @@ Parameters:
     Type: String
   SecretsARN:
     Type: String
-  
 
 Conditions:
   UseHostedZone:
@@ -56,14 +55,14 @@ Resources:
         - Effect: Allow
           Action: secretsmanager:GetSecretValue
           Resource: 
-          - SecretsARN
+          - !Ref SecretsARN
       Roles:
         - !Ref ECSTaskRole
 
   SecretRDSInstanceAttachment1:
     Type: AWS::SecretsManager::SecretTargetAttachment
     Properties:
-      SecretId: SecretsARN
+      SecretId: !Ref SecretsARN
       TargetId: !Ref DatabaseCluster
       TargetType: AWS::RDS::DBCluster
 
@@ -116,8 +115,8 @@ Resources:
       DBClusterParameterGroupName: default.aurora-mysql5.7
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       Engine: aurora-mysql
-      MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseRotationSecret, ':SecretString:username}}' ]]
-      MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseRotationSecret, ':SecretString:password}}' ]]
+      MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref SecretsARN, ':SecretString:username}}' ]]
+      MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref SecretsARN, ':SecretString:password}}' ]]
       EnableCloudwatchLogsExports: 
         - "error"
         - "general"
