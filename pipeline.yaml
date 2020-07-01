@@ -342,7 +342,7 @@ Resources:
                 - Name: InfraDeployOutput
               Configuration:
                 ActionMode: REPLACE_ON_FAILURE
-                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
+                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND,CAPABILITY_NAMED_IAM
                 RoleArn: !GetAtt CloudFormationServiceRole.Arn
                 StackName: !Sub "${AWS::StackName}-infra"
                 TemplatePath: "App::infra.yaml"
@@ -362,9 +362,9 @@ Resources:
                     "PubSubnet2": "${PubSubnet2}",
                     "CacheInstanceType": "${CacheInstanceType}",
                     "DAXInstanceType": "${DAXInstanceType}",
-                    "MinContainers": "${MinContainers}",
-                    "MaxContainers": "${MaxContainers}",
-                    "AutoScalingTargetValue": "${AutoScalingTargetValue}"
+                    "MinContainers": ${MinContainers},
+                    "MaxContainers": ${MaxContainers},
+                    "AutoScalingTargetValue": ${AutoScalingTargetValue}
                   }
         #      RunOrder: 2
         # - Name: Deploy ECS

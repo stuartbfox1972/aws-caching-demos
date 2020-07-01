@@ -143,6 +143,7 @@ Resources:
       Engine: aurora-mysql
       PubliclyAccessible: false
 
+  ## ElastiCache Config Section
   CacheSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -179,6 +180,7 @@ Resources:
       ReplicationGroupDescription: Replication Group
       SecurityGroupIds:
       - !Ref CacheSecurityGroup
+
   ## DynamoDB Config Section
   SensorLocationTable:
     Type: AWS::DynamoDB::Table
@@ -240,6 +242,14 @@ Resources:
               Service:
               - dax.amazonaws.com
 
+  ## ACM Cert Config Section
+  ALBCertificate:
+    Condition: UseHostedZone
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Sub '${WebsiteName}.${DomainName}'
+      ValidationMethod: DNS
+
   ## LoadBalancer (ALB) Config Section
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -256,6 +266,106 @@ Resources:
           FromPort: 443
           ToPort: 443
           CidrIp: 0.0.0.0/0
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${AWS::StackName}-ALB"
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: 300
+      Scheme: internet-facing
+      Subnets: 
+        - !Ref PubSubnet1
+        - !Ref PubSubnet2
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+    
+  LoadBalancerListener80:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref 'LoadBalancer'
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - TargetGroupArn: !Ref 'DefaultTargetGroup'
+          Type: 'forward'
+
+  LoadBalancerListener443:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: UseHostedZone
+    Properties:
+      LoadBalancerArn: !Ref 'LoadBalancer'
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref ALBCertificate
+      DefaultActions:
+        - TargetGroupArn: !Ref 'DefaultTargetGroup'
+          Type: 'forward'
+
+  DefaultTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${AWS::StackName}-DefaultTG"
+      VpcId: !Ref 'Vpc'
+      Port: 80
+      Protocol: HTTP
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${AWS::StackName}-TG"
+      VpcId: !Ref Vpc
+      Port: 80
+      Protocol: HTTP
+      Matcher:
+        HttpCode: 200-299
+      HealthCheckIntervalSeconds: 60
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 45
+      HealthyThresholdCount: 2
+      TargetType: ip
+
+  ListenerRule80:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref LoadBalancerListener80
+      Priority: 1
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /*
+      Actions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+      
+  ListenerRule443:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: UseHostedZone
+    Properties:
+      ListenerArn: !Ref LoadBalancerListener443
+      Priority: 1
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /*
+      Actions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+
+  ## Route53 Config Section
+  DNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: UseHostedZone
+    Properties:
+      HostedZoneId: !Ref HostedZone
+      Name: !Join [".", [!Ref WebsiteName, !Ref DomainName]]
+      Type: A
+      AliasTarget:
+        HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+        DNSName: !GetAtt LoadBalancer.DNSName
 
   ## CloudWatch Config Section
   CloudWatchLogsGroup:
