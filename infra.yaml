@@ -12,75 +12,36 @@ Metadata:
 Parameters:
   UseHostedZone:
     Type: String
-    AllowedValues:
-      - Yes
-      - No
   HostedZone:
-    Type: AWS::Route53::HostedZone::Id
-    Description: Route53 Hosted Zone to alias the ALB into
+    Type: String
   WebsiteName:
     Type: String
-    Default: "cache-demo"
-    Description: "Hostname"
-    AllowedPattern: "[a-zA-Z0-9\\-]*"
   DomainName:
     Type: String
-    Description: "Domain Name - Nasty requirement to type in the HostedZone domain (sorry)"
-    AllowedPattern: "[a-zA-Z0-9\\-\\.]*"
   Vpc:
-    Type: AWS::EC2::VPC::Id
-    Description: "VPC where the cache and database instances will be placed"
+    Type: String
   DBInstanceType:
     Type: String
-    Default: db.t2.medium
-    Description: "RDS MySQL Instance types, i.e. db.t2.micro, db.t2.small, db.m3.medium, db.m4.xlarge, etc"
-    AllowedValues:
-      - db.t2.small
-      - db.t2.medium
-      - db.r5.large
   DBUser:
     Type: String
-    Default: "demodb"
-    Description: "Database Username"
-    AllowedPattern: "[a-zA-Z0-9]*"
   PrivSubnet1:
-    Type: AWS::EC2::Subnet::Id
-    Description: "Private Subnet Id where nodes instance will be placed"
+    Type: String
   PrivSubnet2:
-    Type: AWS::EC2::Subnet::Id
-    Description: "Private Subnet Id where nodes instance will be placed"
+    Type: String
   CacheInstanceType:
     Type: String
-    Default: cache.t3.medium
-    Description: "ElastiCache Instance types, i.e. cache.t2.small, cache.m3.large, etc"
-    AllowedValues:
-      - cache.t3.micro
-      - cache.t3.small
-      - cache.t3.medium
-      - cache.r5.large
   DAXInstanceType:
     Type: String
-    Default: dax.t2.medium
-    Description: "RDS MySQL Instance types, i.e. db.t2.micro, db.t2.small, db.m3.medium, db.m4.xlarge, etc"
-    AllowedValues:
-      - dax.t2.small
-      - dax.t2.medium
-      - dax.r4.large
   PubSubnet1:
-    Type: AWS::EC2::Subnet::Id
-    Description: "Public Subnet Id where the ALB will be placed"
+    Type: String
   PubSubnet2:
-    Type: AWS::EC2::Subnet::Id
-    Description: "Public Subnet Id where the ALB will be placed"
+    Type: String
   MinContainers:
     Type: Number
-    Default: 0
   MaxContainers:
     Type: Number
-    Default: 20
   AutoScalingTargetValue:
     Type: Number
-    Default: 25
 
 Conditions:
   UseHostedZone:

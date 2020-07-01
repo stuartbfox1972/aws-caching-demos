@@ -1,11 +1,11 @@
 {
-    "UseHostedZone": "true",
-    "WebsiteName": "cache-demo",
-    "DBInstanceType": "db.t2.medium",
-    "DBUser": "demodb",
-    "CacheInstanceType": "cache.t3.medium",
-    "DAXInstanceType": "dax.t2.medium",
-    "MinContainers":  0,
-    "MaxContainers": 20,
-    "AutoScalingTargetValue": 25
+  "UseHostedZone": "true",
+  "WebsiteName": "cache-demo",
+  "DBInstanceType": "db.t2.medium",
+  "DBUser": "demodb",
+  "CacheInstanceType": "cache.t3.medium",
+  "DAXInstanceType": "dax.t2.medium",
+  "MinContainers":  0,
+  "MaxContainers": 20,
+  "AutoScalingTargetValue": 25
 }
