@@ -346,6 +346,7 @@ Resources:
                 RoleArn: !GetAtt CloudFormationServiceRole.Arn
                 StackName: !Sub "${AWS::StackName}-infra"
                 TemplatePath: "App::infra.yaml"
+                TemplateConfiguration: "App::infra-parameters.json"
                 ParameterOverrides: !Sub |
                   {
                     "UseHostedZone": "${UseHostedZone}",
