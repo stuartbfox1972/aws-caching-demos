@@ -36,17 +36,10 @@ Parameters:
     Type: String
   PubSubnet2:
     Type: String
-  MinContainers:
-    Type: Number
-  MaxContainers:
-    Type: Number
-  AutoScalingTargetValue:
-    Type: Number
 
 Conditions:
   UseHostedZone:
     !Equals [Yes, !Ref UseHostedZone]
-
   
 Resources:
 ## Secrets Manager Config Section
