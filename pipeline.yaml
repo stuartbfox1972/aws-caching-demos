@@ -137,6 +137,17 @@ Parameters:
     Default: 25
 
 Resources:
+  DatabaseRotationSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: 'This is the secret for my RDS instance'
+      Name: !Sub "/${AWS::StackName}/rds/connection_string"
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username": "${DBUser}"}'
+        GenerateStringKey: 'password'
+        PasswordLength: 16
+        ExcludeCharacters: '"@/\'
+
   Repository:
     Type: AWS::ECR::Repository
     DeletionPolicy: Retain
@@ -200,6 +211,10 @@ Resources:
                   - ecr:InitiateLayerUpload
                   - ecr:UploadLayerPart
                   - ecr:CompleteLayerUpload
+              - Resource: !Ref DatabaseRotationSecret
+                Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
@@ -252,7 +267,7 @@ Resources:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
 
-  CodeBuildProject:
+  DockerBuild:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
@@ -285,7 +300,33 @@ Resources:
             Value: !Ref AWS::Region
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
-      Name: !Ref AWS::StackName
+      ServiceRole: !Ref CodeBuildServiceRole
+
+  DeployDummyData:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - pip install -r demo/requirements.txt
+            build:
+              commands:
+                - python populate_mysql.py
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:4.0-20.06.15
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: SECRETS_MANAGER_PATH
+            Value: !Sub "/${AWS::StackName}/rds/connection_string"
       ServiceRole: !Ref CodeBuildServiceRole
 
   Pipeline:
@@ -296,7 +337,7 @@ Resources:
         Type: S3
         Location: !Ref ArtifactBucket
       Stages:
-        - Name: Source
+        - Name: App
           Actions:
             - Name: App
               ActionTypeId:
@@ -312,16 +353,16 @@ Resources:
               OutputArtifacts:
                 - Name: App
               RunOrder: 1
-        - Name: Build
+        - Name: BuildDocker
           Actions:
-            - Name: Build
+            - Name: BuildDocker
               ActionTypeId:
                 Category: Build
                 Owner: AWS
                 Version: 1
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref CodeBuildProject
+                ProjectName: !Ref DockerBuild
               InputArtifacts:
                 - Name: App
               OutputArtifacts:
@@ -346,7 +387,6 @@ Resources:
                 RoleArn: !GetAtt CloudFormationServiceRole.Arn
                 StackName: !Sub "${AWS::StackName}-infra"
                 TemplatePath: "App::infra.yaml"
-                #TemplateConfiguration: "App::infra-parameters.json"
                 ParameterOverrides: !Sub |
                   {
                     "UseHostedZone": "${UseHostedZone}",
@@ -356,6 +396,7 @@ Resources:
                     "Vpc": "${Vpc}",
                     "DBInstanceType": "${DBInstanceType}",
                     "DBUser": "${DBUser}",
+                    "SecretsARN": !Ref DatabaseRotationSecret,
                     "PrivSubnet1": "${PrivSubnet1}",
                     "PrivSubnet2": "${PrivSubnet2}",
                     "PubSubnet1": "${PubSubnet1}",
@@ -363,6 +404,21 @@ Resources:
                     "CacheInstanceType": "${CacheInstanceType}",
                     "DAXInstanceType": "${DAXInstanceType}"
                   }
+        - Name: DeployDummyData
+          Actions:
+            - Name: DeployDummyData
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref DeployDummyData
+              InputArtifacts:
+                - Name: App
+              OutputArtifacts:
+                - Name: DeployDummyDataOutput
+              RunOrder: 4
         #      RunOrder: 2
         # - Name: Deploy ECS
         #   Actions:

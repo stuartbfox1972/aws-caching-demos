@@ -36,6 +36,9 @@ Parameters:
     Type: String
   PubSubnet2:
     Type: String
+  SecretsARN:
+    Type: String
+  
 
 Conditions:
   UseHostedZone:
@@ -43,21 +46,24 @@ Conditions:
   
 Resources:
 ## Secrets Manager Config Section
-  DatabaseRotationSecret:
-    Type: AWS::SecretsManager::Secret
+  SecretsManagerAccessPolicy:
+    Type: AWS::IAM::Policy
     Properties:
-      Description: 'This is the secret for my RDS instance'
-      Name: !Sub "/${AWS::StackName}/rds/connection_string"
-      GenerateSecretString:
-        SecretStringTemplate: !Sub '{"username": "${DBUser}"}'
-        GenerateStringKey: 'password'
-        PasswordLength: 16
-        ExcludeCharacters: '"@/\'
+      PolicyName: !Sub "${AWS::StackName}-SMAccess"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action: secretsmanager:GetSecretValue
+          Resource: 
+          - SecretsARN
+      Roles:
+        - !Ref ECSTaskRole
 
   SecretRDSInstanceAttachment1:
     Type: AWS::SecretsManager::SecretTargetAttachment
     Properties:
-      SecretId: !Ref DatabaseRotationSecret
+      SecretId: SecretsARN
       TargetId: !Ref DatabaseCluster
       TargetType: AWS::RDS::DBCluster
 
