@@ -361,10 +361,7 @@ Resources:
                     "PubSubnet1": "${PubSubnet1}",
                     "PubSubnet2": "${PubSubnet2}",
                     "CacheInstanceType": "${CacheInstanceType}",
-                    "DAXInstanceType": "${DAXInstanceType}",
-                    "MinContainers": ${MinContainers},
-                    "MaxContainers": ${MaxContainers},
-                    "AutoScalingTargetValue": ${AutoScalingTargetValue}
+                    "DAXInstanceType": "${DAXInstanceType}"
                   }
         #      RunOrder: 2
         # - Name: Deploy ECS
