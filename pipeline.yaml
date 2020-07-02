@@ -308,7 +308,7 @@ Resources:
                 - pip install -r demo/requirements.txt
             build:
               commands:
-                - python populate_dynamo.py
+                - python demo/populate_dynamo.py
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/standard:4.0-20.06.15
