@@ -38,6 +38,12 @@ Parameters:
     Type: String
   DockerRepo:
     Type: String
+  MinContainers:
+    Type: Number
+  MaxContainers:
+    Type: Number
+  AutoScalingTargetValue:
+    Type: Number
 
 Conditions:
   UseHostedZone:

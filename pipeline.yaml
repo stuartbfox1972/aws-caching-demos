@@ -402,7 +402,10 @@ Resources:
                     "PubSubnet2": "${PubSubnet2}",
                     "CacheInstanceType": "${CacheInstanceType}",
                     "DAXInstanceType": "${DAXInstanceType}",
-                    "DockerRepo": "${Repository}"
+                    "DockerRepo": "${Repository}",
+                    "MinContainers": ${MinContainers},
+                    "MaxContainers": ${MaxContainers},
+                    "AutoScalingTargetValue": ${AutoScalingTargetValue}
                   }
         - Name: DeployDummyData
           Actions:
