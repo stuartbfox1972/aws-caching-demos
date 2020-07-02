@@ -381,7 +381,7 @@ Resources:
       LogGroupName: !Sub "${AWS::StackName}-LogGroup"
       RetentionInDays: 365
 
-  ## Minimal ECS entities
+  ## ECS Config Section
   ECSTaskRole:
     Type: AWS::IAM::Role
     Properties:
@@ -404,3 +404,74 @@ Resources:
       SecurityGroupIngress:
         - IpProtocol: -1
           SourceSecurityGroupId: !Ref 'ALBSecurityGroup'
+
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${AWS::StackName}-ECSCluster"
+  
+  ECSTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      ExecutionRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
+      TaskRoleArn: { "Fn::GetAtt": ["ECSTaskRole", "Arn"] }
+      RequiresCompatibilities:
+        - "FARGATE"
+      Family: !Sub "${AWS::StackName}-TaskDef"
+      NetworkMode: "awsvpc"
+      Cpu: 512
+      Memory: 1GB
+      ContainerDefinitions:
+      - Name: !Sub "${AWS::StackName}-ContainerDef"
+        Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${DockerImage}:latest"
+        PortMappings:
+        - ContainerPort: 5000
+          Protocol: tcp
+        EntryPoint: 
+          - "/src/boot.sh"
+        LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CloudWatchLogsGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Sub "${AWS::StackName}-LogStream"
+        Environment:
+          - Name: SENSORLOCATION_TABLE
+            Value: !Sub "${AWS::StackName}-sensorLocation"
+          - Name: SENSORDATA_TABLE
+            Value: !Sub "${AWS::StackName}-sensorData"
+          - Name: CACHE_HOST
+            Value: { "Fn::GetAtt": ["CacheCluster","ConfigurationEndPoint.Address"]}
+          - Name: DAX_HOST
+            Value: { "Fn::GetAtt": ["DAXCluster", "ClusterDiscoveryEndpoint"] }
+          - Name: S3_BUCKET
+            Value: !Ref S3Bucket
+          - Name: STACK_NAME
+            Value: !Sub "${AWS::StackName}"
+          - Name: REGION
+            Value: !Sub "${AWS::Region}"
+          - Name: SECRETS_MANAGER_PATH
+            Value: !Sub "/${AWS::StackName}/rds/connection_string"
+
+  ECSService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster: !GetAtt ['ECSCluster', 'Arn']
+      ServiceName: !Sub "${AWS::StackName}-ECSService"
+      LaunchType: FARGATE
+      TaskDefinition: !Ref ECSTaskDefinition
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      HealthCheckGracePeriodSeconds: 10
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - !Ref ECSSecurityGroup
+          Subnets:
+            - !Ref PrivSubnet1
+            - !Ref PrivSubnet2
+      LoadBalancers:
+      - ContainerName: !Sub "${AWS::StackName}-ContainerDef"
+        ContainerPort: 5000
+        TargetGroupArn: !Ref TargetGroup

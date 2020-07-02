@@ -280,11 +280,12 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
             build:
               commands:
-                - docker build --tag "$IMAGE_URI" .
+                - docker build --tag "$IMAGE_URI" --tag "${REPOSITORY_URI}:latest" .
             post_build:
               commands:
                 - docker push "$IMAGE_URI"
-                - printf '[{"name":"simple-app","imageUri":"%s"}]' "$IMAGE_URI" > images.json
+                - docker push "${REPOSITORY_URI}:latest"
+                - printf '[{"name":"demo","imageUri":"%s"}]' "$IMAGE_URI" > images.json
           artifacts:
             files: images.json
       Environment:
@@ -301,6 +302,7 @@ Resources:
   DeployDummyData:
     Type: AWS::CodeBuild::Project
     Properties:
+      TimeoutInMinutes: 120
       Artifacts:
         Type: CODEPIPELINE
       Source:
@@ -416,24 +418,22 @@ Resources:
               OutputArtifacts:
                 - Name: DeployDummyDataOutput
               RunOrder: 4
-        #      RunOrder: 2
-        # - Name: Deploy ECS
-        #   Actions:
-        #     - Name: Deploy
-        #       ActionTypeId:
-        #         Category: Deploy
-        #         Owner: AWS
-        #         Version: 1
-        #         Provider: ECS
-        #       Configuration:
-        #         ClusterName: !Ref Cluster
-        #         ServiceName: !Ref Service
-        #         FileName: images.json
-        #       InputArtifacts:
-        #         - Name: BuildOutput
-        #       RunOrder: 1
+        - Name: DeployECS
+          Actions:
+            - Name: DeployECS
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: ECS
+              InputArtifacts:
+                - Name: App
+              Configuration:
+                ClusterName: !Sub "${AWS::StackName}-infra-ECSCluster"
+                ServiceName: !Sub "${AWS::StackName}-infra-ECSService"
+                FileName: "App::images.json"
+              RunOrder: 5
 
-  
 Outputs:
   PipelineUrl:
     Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}
