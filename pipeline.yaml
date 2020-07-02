@@ -56,13 +56,16 @@ Metadata:
 Parameters:
   GitHubRepo:
     Type: String
+    Default: aws-caching-demo
   GitHubBranch:
     Type: String
+    Default: master
   GitHubToken:
     Type: String
     NoEcho: true
   GitHubUser:
     Type: String
+    Default: stuartbfox1972
   Vpc:
     Type: AWS::EC2::VPC::Id
     Description: "VPC where cache and database instances will be placed"
@@ -205,7 +208,9 @@ Resources:
                 - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AWS::StackName}-infra-sensorLocation
                 Effect: Allow
                 Action:
-                  - secretsmanager:GetSecretValue
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:BatchWriteItem
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
