@@ -403,9 +403,9 @@ Resources:
                     "CacheInstanceType": "${CacheInstanceType}",
                     "DAXInstanceType": "${DAXInstanceType}",
                     "DockerRepo": "${Repository}",
-                    "MinContainers": ${MinContainers},
-                    "MaxContainers": ${MaxContainers},
-                    "AutoScalingTargetValue": ${AutoScalingTargetValue}
+                    "MinContainers": "${MinContainers}",
+                    "MaxContainers": "${MaxContainers}",
+                    "AutoScalingTargetValue": "${AutoScalingTargetValue}"
                   }
         - Name: DeployDummyData
           Actions:

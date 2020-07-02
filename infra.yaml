@@ -535,6 +535,7 @@ Resources:
       ServiceName: !Sub "${AWS::StackName}-ECSService"
       LaunchType: FARGATE
       TaskDefinition: !Ref ECSTaskDefinition
+      DesiredCount: !Ref MinContainers
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
