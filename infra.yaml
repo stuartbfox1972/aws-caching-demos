@@ -440,6 +440,11 @@ Resources:
       LogGroupName: !Sub "${AWS::StackName}-LogGroup"
       RetentionInDays: 365
 
+  ## S3 Config Section
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+
   ## ECS Config Section
   ECSTaskRole:
     Type: AWS::IAM::Role
