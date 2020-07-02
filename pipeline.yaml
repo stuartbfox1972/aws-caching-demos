@@ -137,17 +137,6 @@ Parameters:
     Default: 25
 
 Resources:
-  DatabaseRotationSecret:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Description: 'This is the secret for my RDS instance'
-      Name: !Sub "/${AWS::StackName}/rds/connection_string"
-      GenerateSecretString:
-        SecretStringTemplate: !Sub '{"username": "${DBUser}"}'
-        GenerateStringKey: 'password'
-        PasswordLength: 16
-        ExcludeCharacters: '"@/\'
-
   Repository:
     Type: AWS::ECR::Repository
     DeletionPolicy: Retain
@@ -211,7 +200,9 @@ Resources:
                   - ecr:InitiateLayerUpload
                   - ecr:UploadLayerPart
                   - ecr:CompleteLayerUpload
-              - Resource: !Ref DatabaseRotationSecret
+              - Resource:
+                - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AWS::StackName}-infra-sensorData
+                - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AWS::StackName}-infra-sensorLocation
                 Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
@@ -317,7 +308,7 @@ Resources:
                 - pip install -r demo/requirements.txt
             build:
               commands:
-                - python populate_mysql.py
+                - python populate_dynamo.py
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/standard:4.0-20.06.15
@@ -325,8 +316,10 @@ Resources:
         EnvironmentVariables:
           - Name: AWS_DEFAULT_REGION
             Value: !Ref AWS::Region
-          - Name: SECRETS_MANAGER_PATH
-            Value: !Sub "/${AWS::StackName}/rds/connection_string"
+          - Name: SENSORDATA_TABLE
+            Value: !Sub "${AWS::StackName}-infra-sensorData"
+          - Name: SENSORLOCATION_TABLE
+            Value: !Sub "${AWS::StackName}-infra-sensorLocation"
       ServiceRole: !Ref CodeBuildServiceRole
 
   Pipeline:
@@ -396,7 +389,6 @@ Resources:
                     "Vpc": "${Vpc}",
                     "DBInstanceType": "${DBInstanceType}",
                     "DBUser": "${DBUser}",
-                    "SecretsARN": !Ref DatabaseRotationSecret,
                     "PrivSubnet1": "${PrivSubnet1}",
                     "PrivSubnet2": "${PrivSubnet2}",
                     "PubSubnet1": "${PubSubnet1}",
