@@ -402,7 +402,7 @@ Resources:
                     "PubSubnet2": "${PubSubnet2}",
                     "CacheInstanceType": "${CacheInstanceType}",
                     "DAXInstanceType": "${DAXInstanceType}",
-                    "DockerRepo": "${Repository}",
+                    "DockerRepo": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}",
                     "MinContainers": "${MinContainers}",
                     "MaxContainers": "${MaxContainers}",
                     "AutoScalingTargetValue": "${AutoScalingTargetValue}"
