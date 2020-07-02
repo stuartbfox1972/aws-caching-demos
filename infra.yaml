@@ -236,6 +236,36 @@ Resources:
         - !Ref ECSTaskRole
 
   ## DAX Config Section
+  DAXSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "DAX Security Group"
+      GroupName: !Sub "${AWS::StackName}-DaxSG"
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8111
+          ToPort: 8111
+          SourceSecurityGroupId: !GetAtt ECSSecurityGroup.GroupId
+
+  DAXSubnetGroup:
+    Type: AWS::DAX::SubnetGroup
+    Properties:
+      Description: "DAX subnet group"
+      SubnetGroupName: !Sub "${AWS::StackName}-DaxSubnetgroup"  
+      SubnetIds:
+        - !Ref PrivSubnet1
+        - !Ref PrivSubnet2
+
+  DAXParamGroup:
+    Type: AWS::DAX::ParameterGroup
+    Properties:
+      Description: "DAX parameter group"
+      ParameterGroupName: !Sub "${AWS::StackName}-DaxParameterGroup"  
+      ParameterNameValues:
+         "query-ttl-millis" : "75000"
+         "record-ttl-millis" : "88000"
+
   DAXRole:
     Type: AWS::IAM::Role
     Properties:
@@ -248,6 +278,33 @@ Resources:
             Principal:
               Service:
               - dax.amazonaws.com
+
+  DAXAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${AWS::StackName}-DAXAccess"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Action:
+            - dax:*
+          Resource:
+            - !GetAtt DAXCluster.Arn
+      Roles:
+        - !Ref ECSTaskRole
+  
+  DAXCluster:
+    Type: AWS::DAX::Cluster
+    Properties:
+      Description: "DAX Cluster"
+      IAMRoleARN: !GetAtt DAXRole.Arn
+      NodeType: !Ref DAXInstanceType
+      ReplicationFactor: 2
+      ParameterGroupName: !Ref DAXParamGroup
+      SecurityGroupIds:
+        - !GetAtt DAXSecurityGroup.GroupId
+      SubnetGroupName: !Ref DAXSubnetGroup
 
   ## ACM Cert Config Section
   ALBCertificate:
