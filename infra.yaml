@@ -36,6 +36,8 @@ Parameters:
     Type: String
   PubSubnet2:
     Type: String
+  DockerRepo:
+    Type: String
 
 Conditions:
   UseHostedZone:
@@ -480,7 +482,7 @@ Resources:
       Memory: 1GB
       ContainerDefinitions:
       - Name: !Sub "${AWS::StackName}-ContainerDef"
-        Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${DockerImage}:latest"
+        Image: !Sub "${DockerRepo}:latest"
         PortMappings:
         - ContainerPort: 5000
           Protocol: tcp
