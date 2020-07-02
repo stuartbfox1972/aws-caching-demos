@@ -458,7 +458,7 @@ Resources:
             Principal:
               Service:
               - ecs-tasks.amazonaws.com
-
+        
   ECSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -473,8 +473,11 @@ Resources:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: !Sub "${AWS::StackName}-ECSCluster"
-  
+
   ECSTaskDefinition:
+    DependsOn:
+      - ECSTaskRole
+      - CloudWatchLogsGroup
     Type: 'AWS::ECS::TaskDefinition'
     Properties:
       ExecutionRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
@@ -519,6 +522,8 @@ Resources:
 
   ECSService:
     Type: 'AWS::ECS::Service'
+    DependsOn:
+      - LoadBalancerListener80
     Properties:
       Cluster: !GetAtt ['ECSCluster', 'Arn']
       ServiceName: !Sub "${AWS::StackName}-ECSService"
@@ -539,3 +544,39 @@ Resources:
       - ContainerName: !Sub "${AWS::StackName}-ContainerDef"
         ContainerPort: 5000
         TargetGroupArn: !Ref TargetGroup
+    
+  AutoScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-ContainerDef-AutoScalingRole"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole'
+
+  AutoScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MinCapacity: !Ref MinContainers
+      MaxCapacity: !Ref MaxContainers
+      ResourceId: !Join ['/', [service, !Ref 'ECSCluster', !GetAtt ECSService.Name]]
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+      RoleARN: !GetAtt AutoScalingRole.Arn
+
+  AutoScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Sub "${AWS::StackName}-ContainerDef-AutoScalingPolicy"
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref AutoScalingTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+        ScaleInCooldown: 20
+        ScaleOutCooldown: 5
+        TargetValue: !Ref AutoScalingTargetValue

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-from amazondax import AmazonDaxClient
 from decimal import *
 
 import boto3
 import datetime
 import json
+import multiprocessing
 import os
 import random
 import string
@@ -18,6 +18,7 @@ WESTERNMOST  = -124.
 SENSORS      = 500
 RECORDS      = 10000
 T            = SENSORS*RECORDS
+WORKERS      = 10
 
 # For testing against local
 if 'DYNAMODB_ENDPOINT' in os.environ:
@@ -41,6 +42,9 @@ def _gen_lat_lng():
     lng = round(random.uniform(EASTERNMOST, WESTERNMOST), 6)
     return(lat,lng)
 
+
+def populate(start_point,stamps):
+    return
 
 print('Checking DynamoDB')
 if 'Item' not in item:
