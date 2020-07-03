@@ -548,14 +548,14 @@ Resources:
             - !Ref PrivSubnet1
             - !Ref PrivSubnet2
       LoadBalancers:
-      - ContainerName: !Sub "${AWS::StackName}-ContainerDef"
+      - ContainerName: "webapp"
         ContainerPort: 5000
         TargetGroupArn: !Ref TargetGroup
     
   AutoScalingRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${AWS::StackName}-ContainerDef-AutoScalingRole"
+      RoleName: !Sub "${AWS::StackName}-AutoScalingRole"
       AssumeRolePolicyDocument:
         Statement:
           - Effect: Allow
@@ -578,7 +578,7 @@ Resources:
   AutoScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
     Properties:
-      PolicyName: !Sub "${AWS::StackName}-ContainerDef-AutoScalingPolicy"
+      PolicyName: !Sub "${AWS::StackName}-AutoScalingPolicy"
       PolicyType: TargetTrackingScaling
       ScalingTargetId: !Ref AutoScalingTarget
       TargetTrackingScalingPolicyConfiguration:

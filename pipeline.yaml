@@ -285,9 +285,9 @@ Resources:
               commands:
                 - docker push "$IMAGE_URI"
                 - docker push "${REPOSITORY_URI}:latest"
-                - printf '[{"name":"demo","imageUri":"%s"}]' "$IMAGE_URI" > images.json
+                - printf '[{"name":"webapp","imageUri":"%s"}]' "$IMAGE_URI" > imagedefinitions.json
           artifacts:
-            files: images.json
+            files: imagedefinitions.json
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/docker:17.09.0
@@ -366,7 +366,7 @@ Resources:
               InputArtifacts:
                 - Name: App
               OutputArtifacts:
-                - Name: BuildOutput
+                - Name: BO
               RunOrder: 2
         - Name: DeployInfra
           Actions:
@@ -431,11 +431,11 @@ Resources:
                 Version: 1
                 Provider: ECS
               InputArtifacts:
-                - Name: App
+                - Name: BO
               Configuration:
                 ClusterName: !Sub "${AWS::StackName}-infra-ECSCluster"
                 ServiceName: !Sub "${AWS::StackName}-infra-ECSService"
-                FileName: "App::images.json"
+                FileName: "imagedefinitions.json"
               RunOrder: 5
 
 Outputs:
