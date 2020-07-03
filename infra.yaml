@@ -495,7 +495,7 @@ Resources:
       Cpu: 512
       Memory: 1GB
       ContainerDefinitions:
-      - Name: !Sub "${AWS::StackName}-ContainerDef"
+      - Name: !Sub "webapp"
         Image: !Sub "${DockerRepo}:latest"
         PortMappings:
         - ContainerPort: 5000
