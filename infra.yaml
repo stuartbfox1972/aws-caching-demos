@@ -462,6 +462,7 @@ Resources:
         - Effect: Allow
           Action:
             - xray:GetSamplingRules
+            - xray:GetSamplingTargets
             - xray:PutTraceSegments
           Resource: 
           - "*"
