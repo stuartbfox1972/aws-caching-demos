@@ -451,6 +451,23 @@ Resources:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
 
+  #X-Ray Config Section
+  XRayAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${AWS::StackName}-SMAccess"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+            - xray:GetSamplingRules
+            - xray:PutTraceSegments
+          Resource: 
+          - "*"
+      Roles:
+        - !Ref ECSTaskRole
+
   ## ECS Config Section
   ECSTaskRole:
     Type: AWS::IAM::Role
