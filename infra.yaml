@@ -455,7 +455,7 @@ Resources:
   XRayAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub "${AWS::StackName}-SMAccess"
+      PolicyName: !Sub "${AWS::StackName}-XRayAccess"
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
