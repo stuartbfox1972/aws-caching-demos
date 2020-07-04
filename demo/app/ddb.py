@@ -10,11 +10,6 @@ import os
 import pprint
 import sys
 
-from aws_xray_sdk.core import xray_recorder
-from aws_xray_sdk.core import patch
-
-libraries = (['boto3'])
-patch(libraries)
 
 def _ddb_query():
     ddb, dax = _dynamodb_connect()

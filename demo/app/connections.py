@@ -8,12 +8,6 @@ import json
 import mysql.connector as mysql
 import os
 
-from aws_xray_sdk.core import xray_recorder
-from aws_xray_sdk.core import patch
-
-libraries = (['botocore','boto3' ])
-patch(libraries)
-
 
 def get_secret():
 
