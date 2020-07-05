@@ -1,13 +1,19 @@
-from flask import Flask
-from aws_xray_sdk.core import xray_recorder
-from aws_xray_sdk.core import patch_all
+# Import the X-Ray modules
 from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
+from aws_xray_sdk.core import patcher, xray_recorder
+from flask import Flask
+import requests
 
-patch_all()
+# Patch the requests module to enable automatic instrumentation
+patcher.patch(('requests',))
 
 app = Flask(__name__)
+
+# Configure the X-Ray recorder to generate segments with our service name
+xray_recorder.configure(service='CacheDemo')
+
+# Instrument the Flask application
+XRayMiddleware(app, xray_recorder)
 from app import routes
 
-xray_recorder.configure(service='CacheDemo')
-XRayMiddleware(app, xray_recorder)
 
