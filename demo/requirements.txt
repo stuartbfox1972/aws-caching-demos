@@ -6,7 +6,8 @@ datetime
 flask
 gunicorn
 hurry.filesize
-mysql-connector
+#mysql-connector
+mysql-connector-python
 #redis
 redis-py-cluster
 requests

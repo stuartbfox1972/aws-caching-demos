@@ -5,9 +5,12 @@ from rediscluster import RedisCluster
 import boto3
 import botocore.session
 import json
-import mysql.connector as mysql
+#import mysql.connector as mysql
+import mysql-connector-python as mysql
 import os
 
+from aws_xray_sdk.core import patch_all
+patch_all()
 
 def get_secret():
 
