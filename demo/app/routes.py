@@ -1,4 +1,5 @@
 from app import app
+from app.elasticache import _elasticache_flus
 from app.rds import _rds_compare, _rds_query, _rds_flush
 from app.s3 import _s3_prepare, _s3_clean, _s3_query, _s3_flush
 from app.ddb import _ddb_query
@@ -18,9 +19,8 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/api/v1.0/rds/flush', methods=['GET'])
-def rds_flush():
-    payload = _rds_flush()
+@app.route('/api/v1.0/elasticache/flush', methods=['GET'])
+    payload = _elasticache_flush()
     return Response(payload, mimetype='application/json')
 
 
@@ -57,12 +57,6 @@ def s3_query():
 @app.route('/api/v1.0/s3/compare')
 def s3_compare():
     payload = _s3_compare()
-    return Response(payload, mimetype='application/json')
-
-
-@app.route('/api/v1.0/s3/flush', methods=['GET'])
-def s3_flush():
-    payload = _s3_flush()
     return Response(payload, mimetype='application/json')
 
 
