@@ -1,7 +1,7 @@
 from app import app
-from app.elasticache import _elasticache_flus
-from app.rds import _rds_compare, _rds_query, _rds_flush
-from app.s3 import _s3_prepare, _s3_clean, _s3_query, _s3_flush
+from app.elasticache import _elasticache_flush
+from app.rds import _rds_compare, _rds_query
+from app.s3 import _s3_prepare, _s3_clean, _s3_query
 from app.ddb import _ddb_query
 from flask import render_template, Response
 
@@ -20,6 +20,7 @@ def index():
 
 
 @app.route('/api/v1.0/elasticache/flush', methods=['GET'])
+def elasticache_flush():
     payload = _elasticache_flush()
     return Response(payload, mimetype='application/json')
 
