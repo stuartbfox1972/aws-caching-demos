@@ -66,6 +66,9 @@ Parameters:
   GitHubUser:
     Type: String
     Default: stuartbfox1972
+  GoogleAPIKey:
+    Type: String
+    Default: AABBCCDDEEFFGGHH
   Vpc:
     Type: AWS::EC2::VPC::Id
     Description: "VPC where cache and database instances will be placed"
@@ -389,6 +392,7 @@ Resources:
                 TemplatePath: "App::infra.yaml"
                 ParameterOverrides: !Sub |
                   {
+                    "GoogleAPIKey":"${GoogleAPIKey}",
                     "UseHostedZone": "${UseHostedZone}",
                     "HostedZone": "${HostedZone}",
                     "WebsiteName": "${WebsiteName}",
