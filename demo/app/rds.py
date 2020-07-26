@@ -85,17 +85,6 @@ def _rds_compare():
                           "AVG HIT Query Time": hit,
                           "Measurement": "Seconds",
                           "Payload Size": q1_res['Payload Size'],
-                          "Percentage Increase": diff
+                          "Percentage Change": diff
                         }, indent=1)
-    return payload
-
-def _rds_flush():
-    start = datetime.now()
-    _elasticache_flush()
-    stop = datetime.now()
-    diff = (stop-start).total_seconds()
-
-    payload = json.dumps({"Response": "Keys successfully deleted from Elasticache",
-                          "Duration": str(diff),
-                          "Measurement": "Seconds"}, indent=1)
     return payload

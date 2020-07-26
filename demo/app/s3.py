@@ -71,17 +71,6 @@ def _s3_compare():
     return "Compare"
 
 
-def _s3_flush():
-    start = datetime.now()
-    _elasticache_flush()
-    stop = datetime.now()
-    diff = (stop-start).total_seconds()
-
-    payload = json.dumps({"Response": "Keys successfully deleted from Elasticache",
-                          "Duration": str(diff),
-                          "Measurement": "Seconds"}, indent=1)
-    return payload
-
 def _s3_clean():
     counter = 0
     start = datetime.now()
