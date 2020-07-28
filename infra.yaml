@@ -59,8 +59,7 @@ Resources:
       Description: 'This is the secret for my RDS instance'
       Name: !Sub "/${AWS::StackName}/rds/connection_string"
       GenerateSecretString:
-        #SecretStringTemplate: !Sub '{"username": "${DBUser}","GoogleAPIKey":"${GoogleAPIKey}"}'
-        SecretStringTemplate: !Sub '{"username": "${DBUser}"}'
+        SecretStringTemplate: !Sub '{"username": "${DBUser}","GoogleAPIKey":"${GoogleAPIKey}"}'
         GenerateStringKey: 'password'
         PasswordLength: 16
         ExcludeCharacters: '"@/\'
