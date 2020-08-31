@@ -11,13 +11,15 @@ import random
 import string
 import time
 
-NORTHERNMOST = 49.
-SOUTHERNMOST = 25.
-EASTERNMOST  = -66.
-WESTERNMOST  = -124.
-SENSORS      = 500
-RECORDS      = 10000
-T            = SENSORS*RECORDS
+NORTHERNMOST  = 49.
+SOUTHERNMOST  = 25.
+EASTERNMOST   = -66.
+WESTERNMOST   = -124.
+SENSORS       = 500
+RECORDS       = 10000
+T             = SENSORS*RECORDS
+DIRECTIONS    = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
+MANUFACTURERS = ['AAA', 'BBB', 'CCC', 'DDD', 'EEE', 'FFF', 'GGG', 'HHH']
 
 # For testing against local
 if 'DYNAMODB_ENDPOINT' in os.environ:
@@ -52,12 +54,20 @@ def populate(start, end, stamps):
             Item={
                 'sensorName': sensor,
                 'lat': str(lat),
-                'long': str(lon)
+                'long': str(lon),
+                'manufacturer': random.choice(manufacturers)
             }
         )
         with sensorData.batch_writer() as batchData:
             for stamp in stamps:
-                item = {'sensorName': sensor, 'timestamp': stamp, 'datapoint': random.randint(20,90)}
+                item = {'sensorName': sensor,
+                        'timestamp': stamp,
+                        'temperature': random.randint(20,90),
+                        'visibility': random.randint(0,20),
+                        'windspeed': random.randint(0,20),
+                        'winddirection: random.choice(directions),
+                        'humidity': random.randint(20,90),
+                       }
                 batchData.put_item(Item=item)
 
 def start_workers(stamps):
