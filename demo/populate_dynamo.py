@@ -71,7 +71,7 @@ def start_workers(stamps):
 
 
 print('Checking DynamoDB')
-if 'Item' in item:
+if 'Item' not in item:
     print('Populating DynamoDB Table with ' + str(T), ' records, this could take a while')
 
     dt = datetime.datetime(2016, 2, 25, 23, 23)
