@@ -55,18 +55,18 @@ def populate(start, end, stamps):
                 'sensorName': sensor,
                 'lat': str(lat),
                 'long': str(lon),
-                'manufacturer': random.choice(manufacturers)
+                'manufacturer': random.choice(MANUFACTURERS)
             }
         )
         with sensorData.batch_writer() as batchData:
             for stamp in stamps:
                 item = {'sensorName': sensor,
                         'timestamp': stamp,
-                        'temperature': random.randint(20,90),
+                        'temperature': random.randint(-20,90),
                         'visibility': random.randint(0,20),
                         'windspeed': random.randint(0,20),
-                        'winddirection: random.choice(directions),
-                        'humidity': random.randint(20,90),
+                        'winddirection': random.choice(DIRECTIONS),
+                        'humidity': random.randint(20,100),
                        }
                 batchData.put_item(Item=item)
 
