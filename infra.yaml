@@ -355,7 +355,7 @@ Resources:
       SecurityGroups:
         - !Ref ALBSecurityGroup
     
-    LoadBalancerListener80:
+  LoadBalancerListener80:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
     Properties:
       DefaultActions:
@@ -534,7 +534,7 @@ Resources:
   ECSService:
     Type: 'AWS::ECS::Service'
     DependsOn:
-      - LoadBalancerListener80
+      - LoadBalancerListener443
     Properties:
       Cluster: !GetAtt ['ECSCluster', 'Arn']
       ServiceName: !Sub "${AWS::StackName}-ECSService"
