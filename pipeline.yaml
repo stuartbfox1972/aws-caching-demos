@@ -60,10 +60,10 @@ Metadata:
 Parameters:
   GitHubRepo:
     Type: String
-    Default: aws-caching-demo
+    Default: aws-caching-demos
   GitHubBranch:
     Type: String
-    Default: main
+    Default: master
   GitHubToken:
     Type: String
     NoEcho: true
