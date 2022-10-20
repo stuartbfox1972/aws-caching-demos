@@ -129,6 +129,8 @@ Resources:
     Type: "AWS::RDS::DBCluster"
     Properties: 
       DatabaseName: employees
+      PreferredMaintenanceWindow: "Tue:04:00-Tue:04:30"
+      PreferredBackupWindow: "22:30-23:30"
       VpcSecurityGroupIds:
         - !Ref DatabaseSecurityGroup
       DBClusterParameterGroupName: default.aurora-mysql5.7
