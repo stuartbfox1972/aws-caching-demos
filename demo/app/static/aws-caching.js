@@ -59,7 +59,7 @@ function copyClip(q) {
   
     /* Copy the text inside the text field */
     document.execCommand("copy");
-    document.getElementById("queryString").innerHTML = copyText.value;
+    document.getElementById("queryString").value = copyText.value;
   
 }
 
